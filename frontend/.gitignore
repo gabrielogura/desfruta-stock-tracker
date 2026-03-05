@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 
 #Ignore SQLlite's bank
-.db
+*.db
+
 *scratch*.py
