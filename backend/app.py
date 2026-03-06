@@ -8,8 +8,6 @@ CORS(app)
 app.config["JWT_SECRET_KEY"] = "super-secret-key-123"
 jwt = JWTManager(app)
 
-USER_DB = {"admin": "123456"}
-
 @app.route('/login', methods=['POST'])
 def login():
     dados = request.get_json()
