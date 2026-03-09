@@ -1,5 +1,6 @@
 import sqlite3
 import os
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db_path = 'backend/data/desfrutastock.db'
 
@@ -29,6 +30,7 @@ else:
     )
     """)
 
+# A coluna data é preenchida automaticamente com a data e hora atuais no momento da inserção da venda.
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS vendas (
         venda_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,7 +38,7 @@ else:
         produto_id INTEGER,
         quantidade_kg REAL,
         tipo TEXT,
-        data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        data TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
         )
     """)
 
@@ -69,48 +71,61 @@ else:
     conn.close()
     print("Banco inicializado com sucesso!")
 
-
-# Login de usuário
-def login_usuario(username, password):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
-    user = cursor.fetchone()
-    conn.close()
-    if user:
-        return True
-    return False
-
-# Registro de usuário
+# Função para registrar usuário
 def registrar_usuario(nome, username, password, role):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO users (nome, username, password, role) VALUES (?, ?, ?, ?)', (nome, username, password, role))
+    # Cria o hash da senha antes de salvar
+    pwd_hash = generate_password_hash(password)
+    cursor.execute('INSERT INTO users (nome, username, password, role) VALUES (?, ?, ?, ?)', 
+                   (nome, username, pwd_hash, role))
+    conn.commit()
+    conn.close()
+
+# Função para verificar login
+def login_usuario(username, password):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if user and check_password_hash(user[0], password):
+        return True
+    return False
+
+# Função para obter o ID do usuário a partir do username
+def obter_id_por_username(username):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id FROM users WHERE username = ?", (username,))
+    resultado = cursor.fetchone()
+    conn.close()
+    return resultado[0] if resultado else None
+
+# Registrar venda
+def registrar_venda(user_id, produto_id, quantidade_kg, tipo):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO vendas (user_id, produto_id, quantidade_kg, tipo) VALUES (?, ?, ?, ?)', (user_id, produto_id, quantidade_kg, tipo))
     conn.commit()
     conn.close()
 
 # Obter relatório de vendas
 def obter_relatorio_vendas():
-    db_path = 'backend/data/desfrutastock.db'
     conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row 
     cursor = conn.cursor()
 
     query = """
-    SELECT 
-        v.venda_id,
-        p.sabor,
-        v.quantidade_kg,
-        v.tipo,
-        (v.quantidade_kg * CASE 
-            WHEN v.tipo = 'PF' THEN p.preco_pf 
-            ELSE p.preco_cnpj 
-        END) AS valor_total
+    SELECT v.venda_id, p.sabor, v.quantidade_kg, v.tipo,
+           (v.quantidade_kg * CASE WHEN v.tipo = 'PF' THEN p.preco_pf ELSE p.preco_cnpj END) AS valor_total
     FROM vendas v
     JOIN produtos p ON v.produto_id = p.id
     """
     
     cursor.execute(query)
-    resultados = cursor.fetchall()
-    conn.close()
+    resultados = [dict(row) for row in cursor.fetchall()]
     
+    conn.close()
     return resultados
