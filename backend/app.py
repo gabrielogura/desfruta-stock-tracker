@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from core.database import registrar_usuario, login_usuario, obter_id_por_username, obter_usuario_por_username, verificar_produtos_disponiveis, verificar_kg_disponiveis
+from core.database import (
+registrar_usuario, login_usuario, obter_usuario_por_username, verificar_produtos_disponiveis, 
+verificar_kg_disponiveis, tabela_produtos
+)
 import os
 from dotenv import load_dotenv
 
@@ -104,6 +107,14 @@ def faturamento_mensal():
 @jwt_required()
 def atividade_recente():
     pass
+
+@app.route('/api/produtos/tabela', methods=['GET'])
+def tabela_produtos():
+    try:
+        dados = tabela_produtos()
+        return jsonify({"status": "sucesso", "dados": dados}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

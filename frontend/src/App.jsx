@@ -842,17 +842,18 @@ function ProductsPage() {
       </div>
 
       <div className="splitGrid twoColsTop">
-        <SectionCard title="Filtros e cadastro rápido" subtitle="Estrutura-base para busca, categoria, unidade e status.">
+        <SectionCard title="Cadastro Rápido" subtitle="Cadastro completo do produto, contendo todos os campos necessários.">
           <div className="filtersGrid">
-            <Field label="Produto" placeholder="Nome ou SKU" />
-            <Field label="Categoria" placeholder="Selecione uma categoria" />
-            <Field label="Unidade" placeholder="Kg, caixa, bandeja..." />
-            <Field label="Status" placeholder="Ativo, rascunho, inativo" />
+            <Field label="Nome do Produto" placeholder="Nome do produto" />
+            <Field label="Status" placeholder="Ativo, Inativo" />
+            <Field label="Preço PF" placeholder="R$ 0,00" type="text" />
+            <Field label="Preço CNPJ" placeholder="R$ 0,00" type="text" />
+            <Field label="Quantidade (Kg)" placeholder="0,000 Kg" type="text" />
           </div>
 
           <div className="sectionActions">
             <button className="btn">Novo produto</button>
-            <button className="ghostBtn">Limpar filtros</button>
+            <button className="ghostBtn">Limpar campos</button>
           </div>
         </SectionCard>
 
@@ -1177,11 +1178,11 @@ function ApiBlueprintCard({ title, items, notes }) {
   )
 }
 
-function Field({ label, placeholder }) {
+function Field({ label, placeholder, type = "text" }) {
   return (
     <label className="field">
       <span>{label}</span>
-      <input type="text" placeholder={placeholder} />
+      <input type={type} placeholder={placeholder} />
     </label>
   )
 }

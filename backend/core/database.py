@@ -84,14 +84,6 @@ def login_usuario(username, password):
         user = cursor.fetchone()
         return user and check_password_hash(user[0], password)
         
-# Função para obter o ID do usuário a partir do username
-def obter_id_por_username(username):
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT user_id FROM users WHERE username = ?", (username,))
-        resultado = cursor.fetchone()
-        return resultado[0] if resultado else None
-
 # Função para obter os dados completos do usuário
 def obter_usuario_por_username(username):
     with sqlite3.connect(db_path) as conn:
@@ -118,6 +110,29 @@ def verificar_kg_disponiveis():
         cursor.execute("SELECT SUM(quantidade_kg) FROM produtos_padrao WHERE disponivel = 1")
         kg_disponiveis = cursor.fetchone()[0] or 0
         return kg_disponiveis
+    
+# Função para obter a tabela completa de produtos
+def tabela_produtos():
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT sabor FROM produtos_padrao")
+        produtos = cursor.fetchall()
+        cursor.execute("SELECT preco_pf FROM produtos_padrao")
+        precos_pf = cursor.fetchall()
+        cursor.execute("SELECT preco_cnpj FROM produtos_padrao")
+        precos_cnpj = cursor.fetchall()
+        cursor.execute("SELECT quantidade_kg FROM produtos_padrao")
+        quantidades_kg = cursor.fetchall()
+        cursor.execute("SELECT disponivel FROM produtos_padrao")
+        disponiveis = cursor.fetchall()
+        return {
+            "produtos": [produto["sabor"] for produto in produtos],
+            "precos_pf": [preco["preco_pf"] for preco in precos_pf],
+            "precos_cnpj": [preco["preco_cnpj"] for preco in precos_cnpj],
+            "quantidades_kg": [quantidade["quantidade_kg"] for quantidade in quantidades_kg],
+            "disponiveis": [disponivel["disponivel"] for disponivel in disponiveis]
+        }
     
 # --- Execução ---
 if __name__ == "__main__":
