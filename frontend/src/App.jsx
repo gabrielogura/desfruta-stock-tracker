@@ -1026,13 +1026,12 @@ function ProductsPage() {
 
       <SectionCard title="Tabela base de produtos" subtitle="Clique no ícone de lixeira para deletar um produto diretamente pela tabela.">
         <div className="table modernTable productsTable">
-          <div className="row head" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto' }}>
+          <div className="row head" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr' }}>
             <span>Produto</span>
             <span>Preço PF</span>
             <span>Preço CNPJ</span>
             <span>Quantidade (Kg)</span>
             <span>Status</span>
-            <span></span>
           </div>
 
           {tableLoading ? (
@@ -1048,7 +1047,7 @@ function ProductsPage() {
               <div
                 className="row"
                 key={row._sabor || row.product}
-                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', alignItems: 'center' }}
+                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', alignItems: 'center' }}
               >
                 <span>{row.product}</span>
                 <span>{row.pricePF}</span>
@@ -1056,27 +1055,6 @@ function ProductsPage() {
                 <span>{row.quantity}</span>
                 <span>
                   <span className={cx('pill', row.status === 'Ativo' ? 'ok' : 'mid')}>{row.status}</span>
-                </span>
-                <span>
-                  <button
-                    onClick={() => handleDelete(row)}
-                    disabled={isDeleting || submitting}
-                    aria-label={`Deletar ${row.product}`}
-                    title={`Deletar ${row.product}`}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: isDeleting && deletingId === (row._sabor || row.product) ? 'not-allowed' : 'pointer',
-                      color: isDeleting && deletingId === (row._sabor || row.product) ? '#aaa' : '#e05252',
-                      padding: '0.25rem 0.4rem',
-                      borderRadius: '6px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      opacity: isDeleting || submitting ? 0.5 : 1,
-                    }}
-                  >
-                    <Trash2 size={15} />
-                  </button>
                 </span>
               </div>
             ))
