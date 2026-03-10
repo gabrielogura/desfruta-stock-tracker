@@ -110,7 +110,15 @@ def verificar_produtos_disponiveis():
         cursor.execute("SELECT COUNT(*) FROM produtos_padrao")
         total = cursor.fetchone()[0]
         return {"disponiveis": disponiveis, "total": total}
-
+        
+# Função que verifica a quantidade de kg disponíveis
+def verificar_kg_disponiveis():
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT SUM(quantidade_kg) FROM produtos_padrao WHERE disponivel = 1")
+        kg_disponiveis = cursor.fetchone()[0] or 0
+        return kg_disponiveis
+    
 # --- Execução ---
 if __name__ == "__main__":
     inicializar_banco()

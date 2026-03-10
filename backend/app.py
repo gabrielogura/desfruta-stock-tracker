@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from core.database import registrar_usuario, login_usuario, obter_id_por_username, obter_usuario_por_username, verificar_produtos_disponiveis
+from core.database import registrar_usuario, login_usuario, obter_id_por_username, obter_usuario_por_username, verificar_produtos_disponiveis, verificar_kg_disponiveis
 import os
 from dotenv import load_dotenv
 
@@ -12,10 +12,16 @@ load_dotenv()
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 jwt = JWTManager(app)
 
+# -------------------------
+# Ping-Pong para teste de API
+# -------------------------
 @app.route('/api/ping', methods=['GET'])
 def ping():
     return jsonify({"status": "pong", "message": "API is running!"}), 200
 
+# -------------------------
+# Api's de Autenticação
+# -------------------------
 @app.route('/api/login', methods=['POST'])
 def login():
     dados = request.get_json()
@@ -53,8 +59,7 @@ def register():
         return jsonify({"msg": "Usuário registrado com sucesso!"}), 201
     except Exception as e:
         return jsonify({"msg": "Erro ao registrar usuário", "error": str(e)}), 500
-
-
+    
 @app.route('/api/me', methods=['GET'])
 @jwt_required()
 def me():
@@ -66,6 +71,9 @@ def me():
 
     return jsonify({"user": usuario}), 200
 
+# -------------------------
+# Api's do Menu Principal
+# -------------------------
 @app.route("/api/menu/produtos-disponiveis", methods=['GET'])
 @jwt_required()
 def produtos_disponiveis():
@@ -74,6 +82,28 @@ def produtos_disponiveis():
         return jsonify({"status": "sucesso", "dados": dados}), 200
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
+    
+@app.route("/api/menu/kg-disponiveis", methods=['GET'])
+@jwt_required()
+def kg_disponiveis():
+    try:
+        kg = verificar_kg_disponiveis()
+        return jsonify({"status": "sucesso", "kg_disponiveis": kg}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+
+# -------------------------
+# Api's em desenvolvimento
+# -------------------------
+@app.route('/api/menu/faturamento-mensal', methods=['GET'])
+@jwt_required()
+def faturamento_mensal():
+    pass
+
+@app.route('/api/menu/atividade-recente', methods=['GET'])
+@jwt_required()
+def atividade_recente():
+    pass
 
 if __name__ == '__main__':
     app.run(debug=True)

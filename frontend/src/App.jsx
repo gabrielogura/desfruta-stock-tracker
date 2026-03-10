@@ -56,7 +56,7 @@ const HOME_METRICS = [
     key: 'totalKg',
     label: 'Total de Produtos em Kg',
     value: '248.730 Kg',
-    hint: 'Base pronta para receber o somatório vindo do endpoint de estoque consolidado.',
+    hint: 'Integração ativa com /api/menu/kg-disponiveis para mostrar o total disponível em Kg.',
     tone: 'green',
   },
   {
@@ -68,7 +68,7 @@ const HOME_METRICS = [
   },
   {
     key: 'billing',
-    label: 'Faturamento mensal',
+    label: 'Faturamento mensal - Dados Fictícios',
     value: 'R$ 186.400',
     hint: 'Estrutura preparada para consolidar o mês corrente e comparar com o anterior.',
     tone: 'dark',
@@ -189,7 +189,8 @@ const EMPLOYEE_ROWS = [
 
 const API_BLUEPRINTS = {
   home: [
-    'GET /api/home/summary',
+    'GET /api/menu/kg-disponiveis',
+    'GET /api/menu/produtos-disponiveis',
     'GET /api/home/activity/recent',
     'GET /api/home/revenue/monthly',
   ],
@@ -319,6 +320,38 @@ function normalizeAvailabilityData(data) {
     disponiveis: Number.isFinite(disponiveis) ? disponiveis : 0,
     total: Number.isFinite(total) ? total : 0,
   }
+}
+
+function normalizeKgData(data) {
+  const source = data?.dados ?? data?.data ?? data ?? {}
+
+  const possibleValues = [
+    source?.kg_disponiveis,
+    source?.kgDisponiveis,
+    source?.total_kg,
+    source?.totalKg,
+    source?.kg_total,
+    source?.disponivel_kg,
+    source?.valor,
+    source?.total,
+  ]
+
+  const raw = possibleValues.find((value) => value !== undefined && value !== null && value !== '')
+  const numeric = Number(String(raw ?? 0).replace(',', '.'))
+
+  return {
+    totalKg: Number.isFinite(numeric) ? numeric : 0,
+  }
+}
+
+function formatKgValue(value) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return '-- Kg'
+
+  return `${numeric.toLocaleString('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })} Kg`
 }
 
 function EyeIcon({ open }) {
@@ -643,6 +676,11 @@ function HomePage() {
     disponiveis: 0,
     total: 0,
   })
+  const [kgAvailable, setKgAvailable] = useState({
+    loading: true,
+    error: '',
+    totalKg: 0,
+  })
 
   useEffect(() => {
     let ignore = false
@@ -670,7 +708,30 @@ function HomePage() {
       }
     }
 
+    async function loadKgAvailable() {
+      try {
+        const res = await api.get('/api/menu/kg-disponiveis')
+        const parsed = normalizeKgData(res?.data)
+
+        if (ignore) return
+        setKgAvailable({
+          loading: false,
+          error: '',
+          ...parsed,
+        })
+      } catch (err) {
+        if (ignore) return
+
+        setKgAvailable({
+          loading: false,
+          error: extractApiMessage(err?.response?.data) || 'Não foi possível carregar o total disponível em Kg.',
+          totalKg: 0,
+        })
+      }
+    }
+
     loadAvailability()
+    loadKgAvailable()
 
     return () => {
       ignore = true
@@ -679,38 +740,64 @@ function HomePage() {
 
   const homeMetrics = useMemo(() => {
     return HOME_METRICS.map((item) => {
-      if (item.key !== 'availability') return item
+      if (item.key === 'totalKg') {
+        if (kgAvailable.loading) {
+          return {
+            ...item,
+            value: 'Carregando...',
+            hint: 'Consultando a API /api/menu/kg-disponiveis.',
+          }
+        }
 
-      if (availability.loading) {
+        if (kgAvailable.error) {
+          return {
+            ...item,
+            value: '--',
+            hint: kgAvailable.error,
+          }
+        }
+
         return {
           ...item,
-          value: 'Carregando...',
-          hint: 'Consultando a API /api/menu/produtos-disponiveis.',
+          value: formatKgValue(kgAvailable.totalKg),
+          hint: 'Total consolidado de produtos disponível retornado pela API.',
         }
       }
 
-      if (availability.error) {
+      if (item.key === 'availability') {
+        if (availability.loading) {
+          return {
+            ...item,
+            value: 'Carregando...',
+            hint: 'Consultando a API /api/menu/produtos-disponiveis.',
+          }
+        }
+
+        if (availability.error) {
+          return {
+            ...item,
+            value: '--',
+            hint: availability.error,
+          }
+        }
+
         return {
           ...item,
-          value: '--',
-          hint: availability.error,
+          value: `${availability.disponiveis}/${availability.total}`,
+          hint: 'Variações com estoque disponível em relação ao total cadastrado na API.',
         }
       }
 
-      return {
-        ...item,
-        value: `${availability.disponiveis}/${availability.total}`,
-        hint: `Variações com estoque disponível em relação ao total cadastrado na API.`,
-      }
+      return item
     })
-  }, [availability])
+  }, [availability, kgAvailable])
 
   return (
     <>
       <section className="heroCard">
         <div>
           <span className="eyebrow">Painel principal</span>
-          <h2 className="heroTitle">Resumo central da operação com card de disponibilidade ligado à API.</h2>
+          <h2 className="heroTitle">Resumo central da operação com cards principais ligados à API.</h2>
           <p className="heroText">
             Este bloco foi desenhado para ser a entrada do sistema, destacando peso total em Kg,
             quantidade de variações disponíveis, faturamento mensal e o histórico recente da operação.
@@ -734,9 +821,9 @@ function HomePage() {
         title="Integração sugerida para o menu principal"
         items={API_BLUEPRINTS.home}
         notes={[
+          'O card Total de Produtos em Kg já consome o endpoint autenticado /api/menu/kg-disponiveis.',
           'O card de variações disponíveis já consome o endpoint autenticado /api/menu/produtos-disponiveis.',
           'Popular a tabela de atividade com paginação ou limite de registros.',
-          'Adicionar loading e tratamento de erro na busca inicial.',
         ]}
       />
 
