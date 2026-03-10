@@ -831,64 +831,254 @@ function HomePage() {
   )
 }
 
+function normalizeTableRows(data) {
+  if (!Array.isArray(data)) return []
+
+  return data.map((item, index) => {
+    const product = item.sabor ?? item.produto ?? item.nome ?? `Produto ${index + 1}`
+    const pricePFValue = item.preco_pf ?? 0
+    const priceCNPJValue = item.preco_cnpj ?? 0
+    const quantityValue = item.quantidade_kg ?? 0
+    const disponivel = item.disponivel
+
+    return {
+      _sabor: item.sabor ?? product,
+      product,
+      pricePF: `R$ ${Number(pricePFValue).toFixed(2).replace('.', ',')}`,
+      priceCNPJ: `R$ ${Number(priceCNPJValue).toFixed(2).replace('.', ',')}`,
+      quantity: `${Number(quantityValue).toLocaleString('pt-BR')} Kg`,
+      status: Number(disponivel) === 1 ? 'Ativo' : 'Inativo',
+    }
+  })
+}
+
+function parseCurrencyInput(value) {
+  if (value === null || value === undefined) return null
+
+  const text = String(value).trim()
+  if (!text) return null
+
+  const cleaned = text
+    .replace(/[R$\s]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+
+  const num = Number(cleaned)
+  return Number.isFinite(num) ? num : null
+}
+
 function ProductsPage() {
-  const [rows, setRows] = useState(PRODUCTS_ROWS)
+  const [rows, setRows] = useState([])
+  const [tableLoading, setTableLoading] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
-  const [metrics, setMetrics] = useState({ loading: true, error: false, total: null, disponiveis: null, porcentagem: null })
+  const [metrics, setMetrics] = useState({
+    loading: true,
+    error: false,
+    total: null,
+    disponiveis: null,
+    porcentagem: null,
+  })
+
+  const [form, setForm] = useState({
+    nome: '',
+    status: 'Ativo',
+    precoPF: '',
+    precoCNPJ: '',
+    quantidade: '',
+  })
+
+  function notify(next) {
+    setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
+  }
+
+  async function loadTable(ignore) {
+    setTableLoading(true)
+    try {
+      const res = await api.get('/api/produtos/tabela')
+      if (ignore?.current) return
+
+      const data = res?.data?.dados ?? []
+      setRows(normalizeTableRows(data))
+    } catch (err) {
+      if (ignore?.current) return
+      console.error('Erro ao carregar tabela de produtos:', err)
+      setRows([])
+      notify({
+        type: 'error',
+        title: 'Erro ao carregar tabela',
+        message: extractApiMessage(err?.response?.data) || 'Não foi possível carregar os produtos da API.',
+      })
+    } finally {
+      if (!ignore?.current) setTableLoading(false)
+    }
+  }
+
+  async function loadMetrics(ignore) {
+    try {
+      const res = await api.get('/api/produtos/metricas')
+      if (ignore?.current) return
+
+      const data = res?.data ?? {}
+      const total = data.total ?? null
+      const disponiveis = data.disponiveis ?? null
+      const porcentagem =
+        data.porcentagem != null
+          ? data.porcentagem
+          : total && Number(total) > 0 && disponiveis != null
+            ? Math.round((Number(disponiveis) / Number(total)) * 100)
+            : 0
+
+      setMetrics({
+        loading: false,
+        error: false,
+        total,
+        disponiveis,
+        porcentagem,
+      })
+    } catch (err) {
+      if (ignore?.current) return
+      console.error('Erro ao carregar métricas:', err)
+      setMetrics({
+        loading: false,
+        error: true,
+        total: null,
+        disponiveis: null,
+        porcentagem: null,
+      })
+    }
+  }
 
   useEffect(() => {
-    let ignore = false
+    const ignore = { current: false }
+    loadTable(ignore)
+    loadMetrics(ignore)
 
-    async function loadMetrics() {
-      try {
-        const res = await api.get('/api/produtos/metricas')
-        if (ignore) return
-        const data = res?.data ?? {}
-        setMetrics({
-          loading: false,
-          error: false,
-          total: data.total ?? null,
-          disponiveis: data.disponiveis ?? null,
-          porcentagem: data.porcentagem ?? null,
-        })
-      } catch {
-        if (ignore) return
-        setMetrics({ loading: false, error: true, total: null, disponiveis: null, porcentagem: null })
-      }
+    return () => {
+      ignore.current = true
     }
-
-    loadMetrics()
-    return () => { ignore = true }
   }, [])
-
-  const [form, setForm] = useState({ nome: '', status: '', precoPF: '', precoCNPJ: '', quantidade: '' })
 
   function handleFormChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
   function handleClear() {
-    setForm({ nome: '', status: '', precoPF: '', precoCNPJ: '', quantidade: '' })
+    setForm({
+      nome: '',
+      status: 'Ativo',
+      precoPF: '',
+      precoCNPJ: '',
+      quantidade: '',
+    })
   }
 
-  function notify(next) {
-    setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
+  async function handleCadastrar() {
+    if (submitting) return
+
+    const sabor = form.nome.trim()
+    const preco_pf = parseCurrencyInput(form.precoPF)
+    const preco_cnpj = parseCurrencyInput(form.precoCNPJ)
+    const quantidade_kg = parseCurrencyInput(form.quantidade)
+    const disponivel = form.status === 'Ativo'
+
+    if (!sabor) {
+      notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe o nome do produto.' })
+      return
+    }
+
+    if (preco_pf === null) {
+      notify({ type: 'error', title: 'Campo inválido', message: 'Informe um Preço PF válido (ex: 6,50).' })
+      return
+    }
+
+    if (preco_cnpj === null) {
+      notify({ type: 'error', title: 'Campo inválido', message: 'Informe um Preço CNPJ válido (ex: 5,80).' })
+      return
+    }
+
+    if (quantidade_kg === null) {
+      notify({ type: 'error', title: 'Campo inválido', message: 'Informe a Quantidade em Kg válida (ex: 3250).' })
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      await api.post('/api/produtos/cadastrar', {
+        sabor,
+        preco_pf,
+        preco_cnpj,
+        quantidade_kg,
+        disponivel,
+      })
+
+      notify({
+        type: 'success',
+        title: 'Produto cadastrado',
+        message: `"${sabor}" foi cadastrado com sucesso.`,
+      })
+
+      handleClear()
+      await loadTable({ current: false })
+      await loadMetrics({ current: false })
+    } catch (err) {
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao cadastrar produto.'
+      notify({ type: 'error', title: 'Erro ao cadastrar', message: msg })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function handleDelete(row) {
-    const key = `${row.product}-${row.integration}`
-    setDeletingId(key)
+    const sabor = row._sabor || row.product
+    if (!sabor) return
 
+    setDeletingId(sabor)
     try {
-      // TODO: substituir ':id' pelo identificador real do produto quando a API estiver ativa
-      // await api.delete(`/api/products/${row.id}`)
+      await api.delete('/api/produtos/deletar', { data: { sabor } })
 
-      // Simulação de delay de rede (remover quando conectar à API)
-      await new Promise((resolve) => setTimeout(resolve, 600))
+      notify({
+        type: 'success',
+        title: 'Produto removido',
+        message: `"${sabor}" foi deletado com sucesso.`,
+      })
 
-      setRows((prev) => prev.filter((r) => `${r.product}-${r.integration}` !== key))
-      notify({ type: 'success', title: 'Produto removido', message: `"${row.product}" foi deletado com sucesso.` })
+      await loadTable({ current: false })
+      await loadMetrics({ current: false })
+    } catch (err) {
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao deletar produto.'
+      notify({ type: 'error', title: 'Erro ao deletar', message: msg })
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  async function handleDeleteByForm() {
+    const sabor = form.nome.trim()
+
+    if (!sabor) {
+      notify({
+        type: 'error',
+        title: 'Campo obrigatório',
+        message: 'Informe o nome do produto a ser deletado.',
+      })
+      return
+    }
+
+    setDeletingId(sabor)
+    try {
+      await api.delete('/api/produtos/deletar', { data: { sabor } })
+
+      notify({
+        type: 'success',
+        title: 'Produto removido',
+        message: `"${sabor}" foi deletado com sucesso.`,
+      })
+
+      handleClear()
+      await loadTable({ current: false })
+      await loadMetrics({ current: false })
     } catch (err) {
       const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao deletar produto.'
       notify({ type: 'error', title: 'Erro ao deletar', message: msg })
@@ -899,8 +1089,13 @@ function ProductsPage() {
 
   const metricTotal = metrics.loading ? 'Carregando...' : metrics.error ? '--' : String(metrics.total ?? '--')
   const metricAtivos = metrics.loading ? 'Carregando...' : metrics.error ? '--' : String(metrics.disponiveis ?? '--')
-  const metricPorcentagem = metrics.loading ? 'Carregando...' : metrics.error ? '--' : metrics.porcentagem != null ? `${metrics.porcentagem}%` : '--'
-  const metricDetail = metrics.error ? 'Não foi possível carregar os dados da API.' : 'Retornado pela API /api/produtos/metricas'
+  const metricPorcentagem =
+    metrics.loading ? 'Carregando...' : metrics.error ? '--' : metrics.porcentagem != null ? `${metrics.porcentagem}%` : '--'
+
+  const metricDetail =
+    metrics.error ? 'Não foi possível carregar os dados da API.' : 'Retornado pela API /api/produtos/metricas'
+
+  const isDeleting = deletingId !== null
 
   return (
     <>
@@ -912,43 +1107,64 @@ function ProductsPage() {
         <MiniMetric title="Taxa de produtos ativos" value={metricPorcentagem} detail={metricDetail} />
       </div>
 
-      <SectionCard title="Cadastro Rápido" subtitle="Cadastro completo do produto, contendo todos os campos necessários.">
+      <SectionCard
+        title="Cadastro Rápido"
+        subtitle="Cadastro completo do produto, contendo todos os campos necessários."
+      >
         <div className="filtersGrid">
           <Field label="Nome do Produto" placeholder="Nome do produto" value={form.nome} onChange={(v) => handleFormChange('nome', v)} />
           <Field label="Status" placeholder="Ativo, Inativo" value={form.status} onChange={(v) => handleFormChange('status', v)} />
-          <Field label="Preço PF" placeholder="R$ 0,00" type="text" value={form.precoPF} onChange={(v) => handleFormChange('precoPF', v)} />
-          <Field label="Preço CNPJ" placeholder="R$ 0,00" type="text" value={form.precoCNPJ} onChange={(v) => handleFormChange('precoCNPJ', v)} />
-          <Field label="Quantidade (Kg)" placeholder="0,000 Kg" type="text" value={form.quantidade} onChange={(v) => handleFormChange('quantidade', v)} />
+          <Field label="Preço PF" placeholder="6,50" type="text" value={form.precoPF} onChange={(v) => handleFormChange('precoPF', v)} />
+          <Field label="Preço CNPJ" placeholder="5,80" type="text" value={form.precoCNPJ} onChange={(v) => handleFormChange('precoCNPJ', v)} />
+          <Field label="Quantidade (Kg)" placeholder="3250" type="text" value={form.quantidade} onChange={(v) => handleFormChange('quantidade', v)} />
         </div>
 
         <div className="sectionActions">
-          <button className="btn">
+          <button className="btn" onClick={handleCadastrar} disabled={submitting || isDeleting}>
             <Plus size={15} />
-            Novo produto
+            {submitting ? 'Cadastrando...' : 'Novo produto'}
           </button>
-          <button className="dangerBtn">
+
+          <button className="dangerBtn" onClick={handleDeleteByForm} disabled={isDeleting || submitting}>
             <Trash2 size={15} />
-            Deletar produto
+            {isDeleting && deletingId === form.nome.trim() ? 'Deletando...' : 'Deletar produto'}
           </button>
-          <button className="ghostBtn" onClick={handleClear}>
+
+          <button className="ghostBtn" onClick={handleClear} disabled={submitting || isDeleting}>
             <X size={15} />
             Limpar campos
           </button>
         </div>
       </SectionCard>
 
-      <SectionCard title="Tabela base de produtos" subtitle="Estrutura visual pronta para receber paginação, ordenação e ações por linha.">
+      <SectionCard
+        title="Tabela de produtos"
+        subtitle="Listagem completa dos produtos cadastrados, com preços por perfil de cliente, volume disponível em estoque e status de disponibilidade. Use a lixeira para remover um produto diretamente."
+      >
         <div className="table modernTable productsTable">
-          <div className="row head rowProducts">
-            <span>Produto</span>
-            <span>Preço PF</span>
-            <span>Preço CNPJ</span>
-            <span>Quantidade (Kg)</span>
-            <span>Status</span>
-          </div>
+        <div className="row head" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr' }}>
+          <span>Produto</span>
+          <span>Preço PF</span>
+          <span>Preço CNPJ</span>
+          <span>Quantidade (Kg)</span>
+          <span>Status</span>
+        </div>
 
-          {rows.map((row) => (
-            <div className="row rowProducts" key={row.product}>
+          {tableLoading ? (
+            <div className="row" style={{ justifyContent: 'center', padding: '1.5rem', color: 'var(--text-muted, #888)' }}>
+              Carregando produtos...
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="row" style={{ justifyContent: 'center', padding: '1.5rem', color: 'var(--text-muted, #888)' }}>
+              Nenhum produto cadastrado.
+            </div>
+          ) : (
+            rows.map((row) => (
+            <div
+              className="row"
+              key={row._sabor || row.product}
+              style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', alignItems: 'center' }}
+            >
               <span>{row.product}</span>
               <span>{row.pricePF}</span>
               <span>{row.priceCNPJ}</span>
@@ -957,7 +1173,8 @@ function ProductsPage() {
                 <span className={cx('pill', row.status === 'Ativo' ? 'ok' : 'mid')}>{row.status}</span>
               </span>
             </div>
-          ))}
+            ))
+          )}
         </div>
       </SectionCard>
     </>

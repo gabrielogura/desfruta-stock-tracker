@@ -117,23 +117,43 @@ def tabela_produtos():
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT sabor FROM produtos_padrao")
+
+        cursor.execute("""
+            SELECT
+                sabor,
+                preco_pf,
+                preco_cnpj,
+                quantidade_kg,
+                disponivel
+            FROM produtos_padrao
+            ORDER BY sabor ASC
+        """)
+
         produtos = cursor.fetchall()
-        cursor.execute("SELECT preco_pf FROM produtos_padrao")
-        precos_pf = cursor.fetchall()
-        cursor.execute("SELECT preco_cnpj FROM produtos_padrao")
-        precos_cnpj = cursor.fetchall()
-        cursor.execute("SELECT quantidade_kg FROM produtos_padrao")
-        quantidades_kg = cursor.fetchall()
-        cursor.execute("SELECT disponivel FROM produtos_padrao")
-        disponiveis = cursor.fetchall()
-        return {
-            "produtos": [produto["sabor"] for produto in produtos],
-            "precos_pf": [preco["preco_pf"] for preco in precos_pf],
-            "precos_cnpj": [preco["preco_cnpj"] for preco in precos_cnpj],
-            "quantidades_kg": [quantidade["quantidade_kg"] for quantidade in quantidades_kg],
-            "disponiveis": [disponivel["disponivel"] for disponivel in disponiveis]
-        }
+
+        return [
+            {
+                "sabor": produto["sabor"],
+                "preco_pf": produto["preco_pf"],
+                "preco_cnpj": produto["preco_cnpj"],
+                "quantidade_kg": produto["quantidade_kg"],
+                "disponivel": produto["disponivel"],
+            }
+            for produto in produtos
+        ]
+
+# Função para cadastrar um novo produto
+def cadastrar_produto(sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel):
+    with sqlite3.connect(db_path) as conn:
+        conn.execute('INSERT INTO produtos_padrao (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel) VALUES (?, ?, ?, ?, ?)', 
+                     (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel))
+        
+# Função deletar um produto
+def deletar_produto(sabor):
+    with sqlite3.connect(db_path) as conn: 
+        conn.execute('DELETE FROM produtos_padrao WHERE sabor = ?', (sabor,))
+        if conn.total_changes == 0:
+            raise ValueError("Produto não encontrado para exclusão.") 
     
 # --- Execução ---
 if __name__ == "__main__":
