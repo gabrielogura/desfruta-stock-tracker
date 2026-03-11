@@ -1003,6 +1003,34 @@ form {
   box-shadow: 0 0 0 3px rgba(0, 128, 64, 0.08);
 }
 
+.field select {
+  width: 100%;
+  height: 50px;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  padding: 0 40px 0 16px;
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  font-size: 14px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+
+.field select:focus {
+  border-color: rgba(0, 128, 64, 0.34);
+  box-shadow: 0 0 0 3px rgba(0, 128, 64, 0.08);
+}
+
+.field select option {
+  color: var(--text);
+  background: #fff;
+}
+
 .sectionActions {
   margin-top: 8px;
   display: flex;
@@ -1142,7 +1170,7 @@ form {
 }
 
 .rowEmployees {
-  grid-template-columns: minmax(160px, 1.2fr) minmax(140px, 1fr) minmax(150px, 1fr) 160px 100px;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) 160px 100px;
 }
 
 .pill {

@@ -213,6 +213,7 @@ def deletar_logs_totais():
         if conn:
             conn.close()
     
+# Função para obter métricas dos funcionários
 def obter_metricas_funcionarios():
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -221,13 +222,44 @@ def obter_metricas_funcionarios():
         funcionarios_ativos = cursor.execute("SELECT COUNT(*) FROM users WHERE ultimo_acesso >= datetime('now', '-1 days')").fetchone()[0]
         return {"total_funcionarios": total_funcionarios, "total_cargos": total_cargos, "funcionarios_ativos": funcionarios_ativos}
     
+# Função para obter a tabela completa de funcionários
 def tabela_funcionarios():
     with sqlite3.connect(db_path) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT nome, role, empresa, ultimo_acesso FROM users ORDER BY nome ASC")
+        cursor.execute("SELECT nome, username, role, empresa, ultimo_acesso FROM users ORDER BY nome ASC")
         funcionarios = cursor.fetchall()
         return [dict(funcionario) for funcionario in funcionarios]
+    
+# Cadastro de funcionário (requer JWT)
+def cadastro_funcionario(nome, username, password, role, empresa):
+    try:
+        with sqlite3.connect(db_path) as conn:
+            pwd_hash = generate_password_hash(password)
+            conn.execute('INSERT INTO users (nome, username, password, role, empresa) VALUES (?, ?, ?, ?, ?)', 
+                        (nome, username, pwd_hash, role, empresa))
+    except sqlite3.IntegrityError:
+        raise ValueError("Username já existe. Escolha outro.")
+    except ValueError as e:
+        print(f"Erro ao cadastrar funcionário: {e}")
+
+# Deletar funcionário (requer JWT)
+def deletar_funcionario(username, password):
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
+            user = cursor.fetchone()
+            if user and check_password_hash(user[0], password):
+                cursor.execute('DELETE FROM users WHERE username = ?', (username,))
+                if cursor.rowcount == 0:
+                    raise ValueError("Funcionário não encontrado para exclusão.")
+            else:
+                raise ValueError("Credenciais inválidas para exclusão.")
+    except ValueError as e:
+        print(f"Erro ao deletar funcionário: {e}")
+    except Exception as e:
+        print(f"Erro inesperado ao deletar funcionário: {e}")
     
 # --- Execução ---
 if __name__ == "__main__":

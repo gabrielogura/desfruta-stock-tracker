@@ -260,6 +260,29 @@ async function resolveDisplayName(fallback = 'Usuário do sistema') {
   }
 }
 
+function getRoleFromResponse(data) {
+  if (!data || typeof data !== 'object') return ''
+  const candidates = [
+    data.role, data.cargo,
+    data?.user?.role, data?.user?.cargo,
+    data?.profile?.role, data?.profile?.cargo,
+    data?.data?.role, data?.data?.cargo,
+  ]
+  const match = candidates.find((v) => typeof v === 'string' && v.trim())
+  return match?.trim().toLowerCase() || ''
+}
+
+async function resolveUserInfo(fallbackName = 'Usuário do sistema') {
+  try {
+    const res = await api.get('/api/me')
+    const name = getDisplayNameFromResponse(res?.data, fallbackName) || fallbackName
+    const role = getRoleFromResponse(res?.data)
+    return { name, role }
+  } catch {
+    return { name: fallbackName, role: (localStorage.getItem('user_role') || '').toLowerCase() }
+  }
+}
+
 function getInitials(fullName = '') {
   const parts = fullName
     .trim()
@@ -321,16 +344,19 @@ function EyeIcon({ open }) {
 export function App() {
   const [token, setToken] = useState(() => localStorage.getItem('token'))
   const [displayName, setDisplayName] = useState(() => localStorage.getItem('display_name') || 'Usuário do sistema')
+  const [userRole, setUserRole] = useState(() => (localStorage.getItem('user_role') || '').toLowerCase())
 
   useEffect(() => {
     if (!token) return
 
     let ignore = false
 
-    resolveDisplayName(localStorage.getItem('display_name') || 'Usuário do sistema').then((resolvedName) => {
+    resolveUserInfo(localStorage.getItem('display_name') || 'Usuário do sistema').then(({ name, role }) => {
       if (ignore) return
-      localStorage.setItem('display_name', resolvedName)
-      setDisplayName(resolvedName)
+      localStorage.setItem('display_name', name)
+      localStorage.setItem('user_role', role.toLowerCase())
+      setDisplayName(name)
+      setUserRole(role.toLowerCase())
     })
 
     return () => {
@@ -342,11 +368,14 @@ export function App() {
     return (
       <MainLayout
         userName={displayName}
+        userRole={userRole}
         onLogout={() => {
           localStorage.removeItem('token')
           localStorage.removeItem('display_name')
+          localStorage.removeItem('user_role')
           setToken(null)
           setDisplayName('Usuário do sistema')
+          setUserRole('')
         }}
       />
     )
@@ -354,9 +383,10 @@ export function App() {
 
   return (
     <LoginPage
-      onAuthed={(nextToken, nextDisplayName) => {
+      onAuthed={(nextToken, nextDisplayName, nextRole) => {
         setToken(nextToken)
         setDisplayName(nextDisplayName)
+        setUserRole(nextRole || '')
       }}
     />
   )
@@ -405,11 +435,12 @@ function LoginPage({ onAuthed }) {
       localStorage.setItem('token', accessToken)
 
       const fallbackName = getDisplayNameFromResponse(data, user.trim()) || 'Usuário do sistema'
-      const displayName = await resolveDisplayName(fallbackName)
+      const { name: displayName, role: userRole } = await resolveUserInfo(fallbackName)
 
       localStorage.setItem('display_name', displayName)
+      localStorage.setItem('user_role', userRole.toLowerCase())
       notify({ type: 'success', title: 'Login realizado', message: `Bem-vindo, ${displayName}!` })
-      onAuthed(accessToken, displayName)
+      onAuthed(accessToken, displayName, userRole)
     } catch (err) {
       const data = err?.response?.data
       const msg = extractApiMessage(data) || err?.message || 'Erro ao autenticar.'
@@ -485,9 +516,21 @@ function LoginPage({ onAuthed }) {
   )
 }
 
-function MainLayout({ onLogout, userName }) {
+const EMPLOYEES_ROLES = ['gerente', 'desenvolvedor']
+
+function MainLayout({ onLogout, userName, userRole }) {
   const [collapsed, setCollapsed] = useState(false)
   const [active, setActive] = useState('home')
+
+  const canSeeEmployees = EMPLOYEES_ROLES.includes(userRole?.toLowerCase?.() || '')
+
+  const visibleNav = useMemo(
+    () => NAV.filter((item) => item.key !== 'employees' || canSeeEmployees),
+    [canSeeEmployees]
+  )
+
+  // If active tab is hidden due to role, reset to home
+  const safeActive = visibleNav.find((item) => item.key === active) ? active : 'home'
 
   return (
     <div className={cx('layout', collapsed && 'isCollapsed')}>
@@ -516,9 +559,9 @@ function MainLayout({ onLogout, userName }) {
 
           <div className="sidebarBody">
             <nav className="nav">
-              {NAV.map((item) => {
+              {visibleNav.map((item) => {
                 const Icon = item.icon
-                const isActive = item.key === active
+                const isActive = item.key === safeActive
 
                 return (
                   <button
@@ -548,13 +591,13 @@ function MainLayout({ onLogout, userName }) {
       </aside>
 
       <main className="main">
-        <PageContent activeKey={active} userName={userName} />
+        <PageContent activeKey={safeActive} userName={userName} userRole={userRole} />
       </main>
     </div>
   )
 }
 
-function PageContent({ activeKey, userName }) {
+function PageContent({ activeKey, userName, userRole }) {
   const current = useMemo(() => NAV.find((item) => item.key === activeKey) ?? NAV[0], [activeKey])
   const userInitials = getInitials(userName)
 
@@ -680,13 +723,106 @@ function parseCurrencyInput(value) {
   return Number.isFinite(num) ? num : null
 }
 
+function ProductCadastrarModal({ form, onConfirm, onCancel, submitting }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 18, padding: '2rem', width: '100%', maxWidth: 440,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+        animation: 'modalIn 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Package size={20} style={{ color: '#059669' }} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Confirmar cadastro</h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: '#64748b', marginTop: 2 }}>Revise os dados antes de registrar</p>
+          </div>
+        </div>
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            { label: 'Nome', value: form.nome },
+            { label: 'Status', value: form.status },
+            { label: 'Preço PF', value: form.precoPF ? `R$ ${form.precoPF}` : '—' },
+            { label: 'Preço CNPJ', value: form.precoCNPJ ? `R$ ${form.precoCNPJ}` : '—' },
+            { label: 'Quantidade (Kg)', value: form.quantidade ? `${form.quantidade} Kg` : '—' },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12.5, color: '#64748b', fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: 13, color: '#0f172a', fontWeight: 600, textAlign: 'right', maxWidth: '60%', wordBreak: 'break-word' }}>{value || '—'}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onCancel} disabled={submitting} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontSize: 13.5, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', transition: 'all 0.15s' }}>
+            Cancelar
+          </button>
+          <button onClick={onConfirm} disabled={submitting} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: submitting ? 'rgba(5,150,105,0.5)' : 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontSize: 13.5, fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 4px 14px rgba(16,185,129,0.25)', transition: 'all 0.15s' }}>
+            {submitting ? <><span className="spinner" aria-hidden="true" style={{ width: 14, height: 14, borderWidth: 2 }} /> Cadastrando...</> : <><Package size={15} /> Confirmar cadastro</>}
+          </button>
+        </div>
+      </div>
+      <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }`}</style>
+    </div>
+  )
+}
+
+function ProductDeletarModal({ nome, onConfirm, onCancel, deleting }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 18, padding: '2rem', width: '100%', maxWidth: 420,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+        animation: 'modalIn 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Trash2 size={20} style={{ color: '#ef4444' }} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Confirmar exclusão</h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: '#64748b', marginTop: 2 }}>Esta ação não pode ser desfeita</p>
+          </div>
+        </div>
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '1rem', marginBottom: '1.5rem' }}>
+          <p style={{ margin: 0, fontSize: 13.5, color: '#7f1d1d', lineHeight: 1.6 }}>
+            Tem certeza que deseja deletar o produto <strong style={{ color: '#991b1b' }}>{nome}</strong>?
+            <br /><span style={{ fontSize: 12, color: '#b91c1c', opacity: 0.85 }}>O registro será removido permanentemente do sistema.</span>
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onCancel} disabled={deleting} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#64748b', fontSize: 13.5, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', transition: 'all 0.15s' }}>
+            Cancelar
+          </button>
+          <button onClick={onConfirm} disabled={deleting} style={{ flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', background: deleting ? 'rgba(239,68,68,0.4)' : 'linear-gradient(135deg, #f87171, #ef4444)', color: '#fff', fontSize: 13.5, fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 4px 14px rgba(239,68,68,0.25)', transition: 'all 0.15s' }}>
+            {deleting ? <><span className="spinner" aria-hidden="true" style={{ width: 14, height: 14, borderWidth: 2 }} /> Deletando...</> : <><Trash2 size={15} /> Sim, deletar</>}
+          </button>
+        </div>
+      </div>
+      <style>{`@keyframes modalIn { from { opacity:0; transform:scale(0.92) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }`}</style>
+    </div>
+  )
+}
+
 function ProductsPage() {
   const [rows, setRows] = useState([])
   const [tableLoading, setTableLoading] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [toast, setToast] = useState(null)
   const [metrics, setMetrics] = useState({ loading: true, error: false, total: null, disponiveis: null, porcentagem: null })
+  const [showCadastrarConfirm, setShowCadastrarConfirm] = useState(false)
+  const [showDeletarConfirm, setShowDeletarConfirm] = useState(false)
 
   function notify(next) {
     setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
@@ -713,8 +849,7 @@ function ProductsPage() {
       if (ignore?.current) return
       const data = res?.data ?? {}
       setMetrics({
-        loading: false,
-        error: false,
+        loading: false, error: false,
         total: data.total ?? null,
         disponiveis: data.disponiveis ?? null,
         porcentagem: data.porcentagem ?? null,
@@ -742,44 +877,67 @@ function ProductsPage() {
     setForm({ nome: '', status: 'Ativo', precoPF: '', precoCNPJ: '', quantidade: '' })
   }
 
-  async function handleCadastrar() {
-    if (submitting) return
+  function handleCadastrarClick() {
+    const sabor = form.nome.trim()
+    const preco_pf = parseCurrencyInput(form.precoPF)
+    const preco_cnpj = parseCurrencyInput(form.precoCNPJ)
+    const quantidade_kg = parseCurrencyInput(form.quantidade)
+    if (!sabor) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe o nome do produto.' }); return }
+    if (preco_pf === null) { notify({ type: 'error', title: 'Campo inválido', message: 'Informe um Preço PF válido (ex: 6,50).' }); return }
+    if (preco_cnpj === null) { notify({ type: 'error', title: 'Campo inválido', message: 'Informe um Preço CNPJ válido (ex: 5,80).' }); return }
+    if (quantidade_kg === null) { notify({ type: 'error', title: 'Campo inválido', message: 'Informe a Quantidade em Kg válida (ex: 18,70).' }); return }
+    setShowCadastrarConfirm(true)
+  }
 
+  async function handleConfirmCadastrar() {
+    if (submitting) return
     const sabor = form.nome.trim()
     const preco_pf = parseCurrencyInput(form.precoPF)
     const preco_cnpj = parseCurrencyInput(form.precoCNPJ)
     const quantidade_kg = parseCurrencyInput(form.quantidade)
     const disponivel = form.status === 'Ativo'
-
-    if (!sabor) {
-      notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe o nome do produto.' })
-      return
-    }
-    if (preco_pf === null) {
-      notify({ type: 'error', title: 'Campo inválido', message: 'Informe um Preço PF válido (ex: 6,50).' })
-      return
-    }
-    if (preco_cnpj === null) {
-      notify({ type: 'error', title: 'Campo inválido', message: 'Informe um Preço CNPJ válido (ex: 5,80).' })
-      return
-    }
-    if (quantidade_kg === null) {
-      notify({ type: 'error', title: 'Campo inválido', message: 'Informe a Quantidade em Kg válida (ex: 18,70).' })
-      return
-    }
-
     setSubmitting(true)
     try {
       await api.post('/api/produtos/cadastrar', { sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel })
-      notify({ type: 'success', title: 'Produto cadastrado', message: `"${sabor}" foi cadastrado com sucesso.` })
+      notify({ type: 'success', title: 'Produto cadastrado', message: `${sabor} foi cadastrado com sucesso.` })
       handleClear()
+      setShowCadastrarConfirm(false)
       await loadTable({ current: false })
       await loadMetrics({ current: false })
     } catch (err) {
       const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao cadastrar produto.'
       notify({ type: 'error', title: 'Erro ao cadastrar', message: msg })
+      setShowCadastrarConfirm(false)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  function handleDeletarClick() {
+    const sabor = form.nome.trim()
+    if (!sabor) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe o nome do produto a ser deletado.' }); return }
+    setShowDeletarConfirm(true)
+  }
+
+  async function handleConfirmDeletar() {
+    if (deleting) return
+    const sabor = form.nome.trim()
+    setDeleting(true)
+    setDeletingId(sabor)
+    try {
+      await api.delete('/api/produtos/deletar', { data: { sabor } })
+      notify({ type: 'success', title: 'Produto removido', message: `${sabor} foi deletado com sucesso.` })
+      handleClear()
+      setShowDeletarConfirm(false)
+      await loadTable({ current: false })
+      await loadMetrics({ current: false })
+    } catch (err) {
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao deletar produto.'
+      notify({ type: 'error', title: 'Erro ao deletar', message: msg })
+      setShowDeletarConfirm(false)
+    } finally {
+      setDeleting(false)
+      setDeletingId(null)
     }
   }
 
@@ -789,28 +947,7 @@ function ProductsPage() {
     setDeletingId(sabor)
     try {
       await api.delete('/api/produtos/deletar', { data: { sabor } })
-      notify({ type: 'success', title: 'Produto removido', message: `"${sabor}" foi deletado com sucesso.` })
-      await loadTable({ current: false })
-      await loadMetrics({ current: false })
-    } catch (err) {
-      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao deletar produto.'
-      notify({ type: 'error', title: 'Erro ao deletar', message: msg })
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
-  async function handleDeleteByForm() {
-    const sabor = form.nome.trim()
-    if (!sabor) {
-      notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe o nome do produto a ser deletado.' })
-      return
-    }
-    setDeletingId(sabor)
-    try {
-      await api.delete('/api/produtos/deletar', { data: { sabor } })
-      notify({ type: 'success', title: 'Produto removido', message: `"${sabor}" foi deletado com sucesso.` })
-      handleClear()
+      notify({ type: 'success', title: 'Produto removido', message: `${sabor} foi deletado com sucesso.` })
       await loadTable({ current: false })
       await loadMetrics({ current: false })
     } catch (err) {
@@ -830,6 +967,24 @@ function ProductsPage() {
     <>
       <Toast toast={toast} onClose={() => setToast(null)} />
 
+      {showCadastrarConfirm && (
+        <ProductCadastrarModal
+          form={form}
+          submitting={submitting}
+          onConfirm={handleConfirmCadastrar}
+          onCancel={() => setShowCadastrarConfirm(false)}
+        />
+      )}
+
+      {showDeletarConfirm && (
+        <ProductDeletarModal
+          nome={form.nome.trim()}
+          deleting={deleting}
+          onConfirm={handleConfirmDeletar}
+          onCancel={() => setShowDeletarConfirm(false)}
+        />
+      )}
+
       <div className="metricGrid compactMetrics">
         <MiniMetric title="Produtos cadastrados"    value={metricTotal}      detail="Total de produtos no sistema" />
         <MiniMetric title="Produtos Ativos"          value={metricAtivos}     detail="Produtos disponíveis para venda" />
@@ -839,22 +994,22 @@ function ProductsPage() {
       <SectionCard title="Cadastro Rápido" subtitle="Cadastro completo do produto, contendo todos os campos necessários.">
         <div className="filtersGrid">
           <Field label="Nome do Produto" placeholder="Nome do produto" value={form.nome} onChange={(v) => handleFormChange('nome', v)} />
-          <Field label="Status" placeholder="Ativo, Inativo" value={form.status} onChange={(v) => handleFormChange('status', v)} />
+          <SelectField label="Status" value={form.status} onChange={(v) => handleFormChange('status', v)} options={['Ativo', 'Inativo']} placeholder={false} />
           <Field label="Preço PF" placeholder="6,50" type="text" value={form.precoPF} onChange={(v) => handleFormChange('precoPF', v)} />
           <Field label="Preço CNPJ" placeholder="5,80" type="text" value={form.precoCNPJ} onChange={(v) => handleFormChange('precoCNPJ', v)} />
           <Field label="Quantidade (Kg)" placeholder="18,70" type="text" value={form.quantidade} onChange={(v) => handleFormChange('quantidade', v)} />
         </div>
 
         <div className="sectionActions">
-          <button className="btn" onClick={handleCadastrar} disabled={submitting || isDeleting}>
+          <button className="btn" onClick={handleCadastrarClick} disabled={submitting || isDeleting || deleting}>
             <Plus size={15} />
             {submitting ? 'Cadastrando...' : 'Novo produto'}
           </button>
-          <button className="dangerBtn" onClick={handleDeleteByForm} disabled={isDeleting || submitting}>
+          <button className="dangerBtn" onClick={handleDeletarClick} disabled={isDeleting || submitting || deleting}>
             <Trash2 size={15} />
-            {isDeleting && deletingId === form.nome.trim() ? 'Deletando...' : 'Deletar produto'}
+            {deleting ? 'Deletando...' : 'Deletar produto'}
           </button>
-          <button className="ghostBtn" onClick={handleClear} disabled={submitting || isDeleting}>
+          <button className="ghostBtn" onClick={handleClear} disabled={submitting || isDeleting || deleting}>
             <X size={15} />
             Limpar campos
           </button>
@@ -1003,10 +1158,352 @@ function StockPage() {
   )
 }
 
+function PasswordField({ label, placeholder, value, onChange }) {
+  const [show, setShow] = useState(false)
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <input
+          type={show ? 'text' : 'password'}
+          placeholder={placeholder}
+          value={value ?? ''}
+          onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+          style={{ paddingRight: 44 }}
+        />
+        <button
+          type="button"
+          onClick={() => setShow(v => !v)}
+          style={{
+            position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+            background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+            color: '#94a3b8', display: 'flex', alignItems: 'center',
+          }}
+          aria-label={show ? 'Ocultar senha' : 'Mostrar senha'}
+        >
+          <EyeIcon open={show} />
+        </button>
+      </div>
+    </label>
+  )
+}
+
+function EmployeeDeleteModal({ username, deleting, onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: '#fff',
+        borderRadius: 18,
+        padding: '2rem',
+        width: '100%',
+        maxWidth: 420,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+        animation: 'modalIn 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10,
+            background: 'rgba(239,68,68,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Trash2 size={20} style={{ color: '#ef4444' }} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+              Confirmar exclusão
+            </h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: '#64748b', marginTop: 2 }}>
+              Esta ação não pode ser desfeita
+            </p>
+          </div>
+        </div>
+
+        <div style={{
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: 12,
+          padding: '1rem',
+          marginBottom: '1.5rem',
+        }}>
+          <p style={{ margin: 0, fontSize: 13.5, color: '#7f1d1d', lineHeight: 1.6 }}>
+            Tem certeza que deseja deletar o funcionário{' '}
+            <strong style={{ color: '#991b1b' }}>@{username}</strong>?
+            <br />
+            <span style={{ fontSize: 12, color: '#b91c1c', opacity: 0.85 }}>
+              O registro será removido permanentemente do sistema.
+            </span>
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onCancel}
+            disabled={deleting}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid #e2e8f0',
+              background: '#fff', color: '#64748b',
+              fontSize: 13.5, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer',
+              transition: 'all 0.15s',
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+              background: deleting ? 'rgba(239,68,68,0.4)' : 'linear-gradient(135deg, #f87171, #ef4444)',
+              color: '#fff', fontSize: 13.5, fontWeight: 700,
+              cursor: deleting ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              boxShadow: '0 4px 14px rgba(239,68,68,0.25)',
+              transition: 'all 0.15s',
+            }}
+          >
+            {deleting ? (
+              <><span className="spinner" aria-hidden="true" style={{ width: 14, height: 14, borderWidth: 2 }} /> Deletando...</>
+            ) : (
+              <><Trash2 size={15} /> Sim, deletar</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.92) translateY(10px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function EmployeeConfirmModal({ form, onConfirm, onCancel, submitting }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: '#fff',
+        borderRadius: 18,
+        padding: '2rem',
+        width: '100%',
+        maxWidth: 440,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+        animation: 'modalIn 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '1.25rem' }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10,
+            background: 'rgba(16,185,129,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <Users size={20} style={{ color: '#059669' }} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+              Confirmar cadastro
+            </h3>
+            <p style={{ margin: 0, fontSize: 12.5, color: '#64748b', marginTop: 2 }}>
+              Revise os dados antes de registrar
+            </p>
+          </div>
+        </div>
+
+        <div style={{
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: 12,
+          padding: '1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+        }}>
+          {[
+            { label: 'Nome', value: form.nome },
+            { label: 'Usuário', value: form.username },
+            { label: 'Senha', value: '••••••••' },
+            { label: 'Cargo', value: form.role },
+            { label: 'Empresa', value: form.empresa },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12.5, color: '#64748b', fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: 13, color: '#0f172a', fontWeight: 600, textAlign: 'right', maxWidth: '60%', wordBreak: 'break-word' }}>{value || '—'}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 10, border: '1.5px solid #e2e8f0',
+              background: '#fff', color: '#64748b',
+              fontSize: 13.5, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer',
+              transition: 'all 0.15s',
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={submitting}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+              background: submitting ? 'rgba(5,150,105,0.5)' : 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#fff', fontSize: 13.5, fontWeight: 700,
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+              boxShadow: '0 4px 14px rgba(16,185,129,0.25)',
+              transition: 'all 0.15s',
+            }}
+          >
+            {submitting ? (
+              <><span className="spinner" aria-hidden="true" style={{ width: 14, height: 14, borderWidth: 2 }} /> Registrando...</>
+            ) : (
+              <><Users size={15} /> Confirmar cadastro</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.92) translateY(10px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 function EmployeesPage() {
   const [metrics, setMetrics] = useState({ loading: true, error: false, total: null, ativos: null, cargos: null })
   const [rows, setRows] = useState([])
   const [tableLoading, setTableLoading] = useState(true)
+  const [toast, setToast] = useState(null)
+  const [form, setForm] = useState({ nome: '', username: '', password: '', role: 'Funcionário', empresa: 'Desfruta Polpas' })
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  function notify(next) {
+    setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
+  }
+
+  function handleFormChange(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function handleClear() {
+    setForm({ nome: '', username: '', password: '', role: 'Funcionário', empresa: 'Desfruta Polpas' })
+  }
+
+  function handleCadastrarClick() {
+    const { nome, username, password, role, empresa } = form
+    if (!nome.trim() || !username.trim() || !password.trim() || !role.trim() || !empresa.trim()) {
+      notify({ type: 'error', title: 'Campos obrigatórios', message: 'Preencha todos os campos antes de cadastrar.' })
+      return
+    }
+    setShowConfirm(true)
+  }
+
+  async function handleConfirm() {
+    if (submitting) return
+    setSubmitting(true)
+    try {
+      await api.post('/api/funcionarios/cadastrar', {
+        nome: form.nome.trim(),
+        username: form.username.trim(),
+        password: form.password,
+        role: form.role.trim(),
+        empresa: form.empresa.trim(),
+      })
+      notify({ type: 'success', title: 'Funcionário cadastrado', message: `${form.nome.trim()} foi registrado com sucesso.` })
+      handleClear()
+      setShowConfirm(false)
+      await reloadTabela()
+      await reloadMetrics()
+    } catch (err) {
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao cadastrar funcionário.'
+      notify({ type: 'error', title: 'Erro ao cadastrar', message: msg })
+      setShowConfirm(false)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function handleDeletarClick() {
+    const { username } = form
+    if (!username.trim()) {
+      notify({ type: 'error', title: 'Campo obrigatório', message: 'Preencha o campo Usuário para deletar.' })
+      return
+    }
+    setShowDeleteConfirm(true)
+  }
+
+  async function handleConfirmDelete() {
+    if (deleting) return
+    setDeleting(true)
+    try {
+      await api.delete('/api/funcionarios/deletar', {
+        data: {
+          username: form.username.trim(),
+          password: form.password || undefined,
+        },
+      })
+      notify({ type: 'success', title: 'Funcionário deletado', message: `${form.username.trim()} foi removido com sucesso.` })
+      handleClear()
+      setShowDeleteConfirm(false)
+      await reloadTabela()
+      await reloadMetrics()
+    } catch (err) {
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao deletar funcionário.'
+      notify({ type: 'error', title: 'Erro ao deletar', message: msg })
+      setShowDeleteConfirm(false)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  async function reloadMetrics() {
+    try {
+      const res = await api.get('/api/funcionarios/metricas')
+      const data = res?.data ?? {}
+      setMetrics({
+        loading: false, error: false,
+        total:  data.total_funcionarios ?? null,
+        ativos: data.funcionarios_ativos ?? null,
+        cargos: data.total_cargos ?? null,
+      })
+    } catch {
+      setMetrics({ loading: false, error: true, total: null, ativos: null, cargos: null })
+    }
+  }
+
+  async function reloadTabela() {
+    try {
+      const res = await api.get('/api/funcionarios/tabela')
+      setRows(Array.isArray(res?.data?.dados) ? res.data.dados : [])
+    } catch {
+      setRows([])
+    } finally {
+      setTableLoading(false)
+    }
+  }
 
   useEffect(() => {
     let ignore = false
@@ -1017,8 +1514,7 @@ function EmployeesPage() {
         if (ignore) return
         const data = res?.data ?? {}
         setMetrics({
-          loading: false,
-          error: false,
+          loading: false, error: false,
           total:  data.total_funcionarios ?? null,
           ativos: data.funcionarios_ativos ?? null,
           cargos: data.total_cargos ?? null,
@@ -1069,6 +1565,26 @@ function EmployeesPage() {
 
   return (
     <div className="pageStack">
+      <Toast toast={toast} onClose={() => setToast(null)} />
+
+      {showConfirm && (
+        <EmployeeConfirmModal
+          form={form}
+          submitting={submitting}
+          onConfirm={handleConfirm}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <EmployeeDeleteModal
+          username={form.username}
+          deleting={deleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
+
       <div className="metricGrid compactMetrics">
         <MiniMetric title="Funcionários Cadastrados" value={val(metrics.total)}  detail="Total de funcionários no sistema" />
         <MiniMetric title="Funcionários Ativos"      value={val(metrics.ativos)} detail="Com acesso nas últimas 24h" />
@@ -1079,6 +1595,7 @@ function EmployeesPage() {
         <div className="table modernTable employeesTable">
           <div className="row head rowEmployees">
             <span>Nome</span>
+            <span>Usuário</span>
             <span>Empresa</span>
             <span>Cargo</span>
             <span>Último Acesso</span>
@@ -1102,6 +1619,7 @@ function EmployeesPage() {
             return (
               <div className="row rowEmployees" key={idx}>
                 <span>{row.nome ?? '—'}</span>
+                <span style={{ color: 'var(--muted)', fontSize: 13 }}>@{row.username ?? '—'}</span>
                 <span>{row.empresa ?? '—'}</span>
                 <span>{row.role ?? '—'}</span>
                 <span>{formatAcesso(row.ultimo_acesso)}</span>
@@ -1118,19 +1636,23 @@ function EmployeesPage() {
 
       <SectionCard title="Cadastro de funcionário" subtitle="Preencha os campos para registrar um novo funcionário no sistema.">
         <div className="filtersGrid">
-          <Field label="Nome"    placeholder="Nome completo"   value="" onChange={() => {}} />
-          <Field label="Usuário" placeholder="Nome de usuário" value="" onChange={() => {}} />
-          <Field label="Senha"   placeholder="Senha de acesso" type="password" value="" onChange={() => {}} />
-          <Field label="Cargo"   placeholder="Ex: Estoquista"  value="" onChange={() => {}} />
-          <Field label="Empresa" placeholder="Ex: Desfruta CD" value="" onChange={() => {}} />
+          <Field label="Nome"    placeholder="Nome completo"   value={form.nome}     onChange={(v) => handleFormChange('nome', v)} />
+          <Field label="Usuário" placeholder="Nome de usuário" value={form.username} onChange={(v) => handleFormChange('username', v)} />
+          <PasswordField label="Senha" placeholder="Senha de acesso" value={form.password} onChange={(v) => handleFormChange('password', v)} />
+          <SelectField label="Cargo" value={form.role} onChange={(v) => handleFormChange('role', v)} options={['Funcionário', 'Gerente']} placeholder={false} />
+          <SelectField label="Empresa" value={form.empresa} onChange={(v) => handleFormChange('empresa', v)} options={['Desfruta Polpas']} placeholder={false} />
         </div>
 
         <div className="sectionActions">
-          <button className="btn" disabled>
+          <button className="btn" onClick={handleCadastrarClick} disabled={submitting || deleting}>
             <Plus size={15} />
             Cadastrar funcionário
           </button>
-          <button className="ghostBtn" disabled>
+          <button className="dangerBtn" onClick={handleDeletarClick} disabled={submitting || deleting}>
+            <Trash2 size={15} />
+            {deleting ? 'Deletando...' : 'Deletar funcionário'}
+          </button>
+          <button className="ghostBtn" onClick={handleClear} disabled={submitting || deleting}>
             <X size={15} />
             Limpar campos
           </button>
@@ -1320,6 +1842,23 @@ function Field({ label, placeholder, type = 'text', value, onChange }) {
         value={value ?? ''}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
       />
+    </label>
+  )
+}
+
+function SelectField({ label, value, onChange, options = [], placeholder = true }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <select
+        value={value ?? ''}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+      >
+        {placeholder && <option value="" disabled>Selecionar...</option>}
+        {options.map((opt) => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
     </label>
   )
 }
