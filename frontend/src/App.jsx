@@ -1116,6 +1116,29 @@ function DashboardPage() {
 }
 
 function StockPage() {
+  const [rows, setRows] = useState([])
+    const [tableLoading, setTableLoading] = useState(true)
+
+    async function loadTable(ignore) {
+      setTableLoading(true)
+      try {
+        const res = await api.get('/api/estoque/tabela')
+        if (ignore?.current) return
+        const data = res?.data?.dados ?? res?.data ?? []
+        setRows(normalizeTableRows(data))
+      } catch {
+        if (ignore?.current) return
+        setRows(normalizeTableRows(PRODUCTS_ROWS))
+      } finally {
+        if (!ignore?.current) setTableLoading(false)
+      }
+    }
+
+    useEffect(() => {
+      const ignore = { current: false }
+      loadTable(ignore)
+      return () => { ignore.current = true }
+    }, [])
   return (
     <div className="pageStack">
       <div className="metricGrid compactMetrics">
@@ -1128,33 +1151,32 @@ function StockPage() {
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
             <span>Produto</span>
-            <span>Local</span>
             <span>Saldo</span>
-            <span>Mínimo</span>
             <span>Status</span>
           </div>
-
-          {STOCK_ROWS.map((row) => (
-            <div className="row rowStock" key={`${row.product}-${row.location}`}>
-              <span>{row.product}</span>
-              <span>{row.location}</span>
-              <span>{row.balance}</span>
-              <span>{row.min}</span>
-              <span>
-                <span
-                  className={cx(
-                    'pill',
-                    row.status === 'Saudável' ? 'ok' : row.status === 'Reposição' ? 'bad' : 'mid',
-                  )}
-                >
-                  {row.status}
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-    </div>
+    
+          {tableLoading ? (
+          <div className='row' style={{justifyContent: 'center', padding: '1.5rem', color: 'var(--text-muted, #888'}}>
+            Carregando estoque...
+          </div>
+        ) : rows.length === 0? (
+          <div className='row' style={{justifyContent: 'cemter', padding: '1.5rem', color: 'var(--text-muted, #888'}}>
+            Nenhum produto no estoque.
+          </div>
+        ) : rows.map((row) => (
+              <div className="row rowStock" key={`${row.product}`}>
+                <span>{row.product}</span>
+                <span>{row.quantity}</span>
+                <span>
+                  <span className={cx('pill',row.status === 'Ativo' ? 'ok' : 'mid')}>
+                    {row.status}
+                  </span>
+                  </span>
+                  </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
   )
 }
 

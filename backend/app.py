@@ -149,7 +149,7 @@ def deletar_logs():
 # -------------------------
 # Api's do Menu Principal
 # -------------------------
-@app.route("/api/menu/metrics", methods=['GET'])
+@app.route('/api/menu/metrics', methods=['GET'])
 @jwt_required()
 def menu_metrics():
     # Obter as métricas dos produtos do banco de dados e retornar em formato JSON
@@ -250,6 +250,24 @@ def deletar_produtodb():
         return jsonify({"status": "erro", "mensagem": str(ve)}), 404
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
+    
+
+# -------------------------
+# Api's Gerenciar Estoque
+# -------------------------
+@app.route('/api/estoque/tabela', methods=['GET'])
+@jwt_required()
+def tabela_estoque_completa():
+    # Obter a tabela completa de estoque do banco de dados
+    try:
+        # Separa os dados necessários para a resposta
+        dados = tabela_produtos()
+        return jsonify({"status": "sucesso", "dados": dados}), 200
+    # Tratamento de erros específicos
+    except ValueError as ve:
+        return jsonify({"status": "erro", "mensagem": str(ve)}), 400
+    except Exception as e:
+        return jsonify({"satus": "erro", "mensagem": str(e)}), 500
     
 # -------------------------
 # APIs Funcionários
