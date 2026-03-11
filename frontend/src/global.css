@@ -1031,6 +1031,16 @@ form {
   background: #fff;
 }
 
+.field input[type="date"] {
+  cursor: pointer;
+  color: var(--text);
+}
+
+.field input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
 .sectionActions {
   margin-top: 8px;
   display: flex;
@@ -1166,7 +1176,7 @@ form {
 }
 
 .rowStock {
-  grid-template-columns: minmax(170px, 1.2fr) minmax(150px, 1fr) 110px 110px 110px;
+  grid-template-columns: minmax(150px, 1.5fr) 110px 110px 120px 140px 110px;
 }
 
 .rowEmployees {

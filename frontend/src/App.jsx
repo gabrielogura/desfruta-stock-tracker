@@ -1115,68 +1115,211 @@ function DashboardPage() {
   )
 }
 
+function normalizeStockRows(data) {
+  if (!Array.isArray(data)) return []
+  return data.map((item) => ({
+    product:   item.sabor ?? item.produto ?? item.product ?? item.nome ?? '—',
+    validade:  item.validade ?? item.data_validade ?? item.expiry ?? null,
+    precoPF:   item.preco_pf   != null ? `R$ ${Number(item.preco_pf).toFixed(2).replace('.', ',')}` : null,
+    precoCNPJ: item.preco_cnpj != null ? `R$ ${Number(item.preco_cnpj).toFixed(2).replace('.', ',')}` : null,
+    quantity:  item.quantidade_kg != null ? `${item.quantidade_kg} Kg` : item.quantity ?? null,
+    status:    item.disponivel === true  || item.disponivel === 1 ? 'Disponível'
+             : item.disponivel === false || item.disponivel === 0 ? 'Indisponível'
+             : item.status ?? null,
+  }))
+}
+
+function formatValidade(v) {
+  if (!v) return '--'
+  const d = new Date(v)
+  if (isNaN(d)) return v
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
 function StockPage() {
   const [rows, setRows] = useState([])
-    const [tableLoading, setTableLoading] = useState(true)
+  const [tableLoading, setTableLoading] = useState(true)
+  const [tableError, setTableError] = useState(false)
+  const [metrics, setMetrics] = useState({ loading: true, error: false, saldo: null, entradas: null, saidas: null })
+  const [stockForm, setStockForm] = useState({ produto: '', validade: '', quantidade: '', acao: 'Adicionar' })
+  const [productOptions, setProductOptions] = useState([])
 
-    async function loadTable(ignore) {
-      setTableLoading(true)
-      try {
-        const res = await api.get('/api/estoque/tabela')
-        if (ignore?.current) return
-        const data = res?.data?.dados ?? res?.data ?? []
-        setRows(normalizeTableRows(data))
-      } catch {
-        if (ignore?.current) return
-        setRows(normalizeTableRows(PRODUCTS_ROWS))
-      } finally {
-        if (!ignore?.current) setTableLoading(false)
-      }
+  function handleStockFormChange(field, value) {
+    setStockForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function handleStockClear() {
+    setStockForm({ produto: '', validade: '', quantidade: '', acao: 'Adicionar' })
+  }
+
+  function handleStockSalvar() {
+    // TODO: integrar com POST /api/estoque/movimentacao
+  }
+
+  async function loadTable(ignore) {
+    setTableLoading(true)
+    setTableError(false)
+    try {
+      const res = await api.get('/api/estoque/tabela')
+      if (ignore?.current) return
+      const data = res?.data?.dados ?? res?.data?.data ?? res?.data ?? []
+      setRows(normalizeStockRows(Array.isArray(data) ? data : []))
+    } catch {
+      if (ignore?.current) return
+      setTableError(true)
+      setRows([])
+    } finally {
+      if (!ignore?.current) setTableLoading(false)
     }
+  }
 
-    useEffect(() => {
-      const ignore = { current: false }
-      loadTable(ignore)
-      return () => { ignore.current = true }
-    }, [])
+  async function loadMetrics(ignore) {
+    try {
+      const res = await api.get('/api/estoque/metricas')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setMetrics({
+        loading:  false,
+        error:    false,
+        saldo:    data.saldo_total    ?? data.saldo    ?? null,
+        entradas: data.entradas_hoje  ?? data.entradas ?? null,
+        saidas:   data.saidas_hoje    ?? data.saidas   ?? null,
+      })
+    } catch {
+      if (ignore?.current) return
+      setMetrics({ loading: false, error: true, saldo: null, entradas: null, saidas: null })
+    }
+  }
+
+  useEffect(() => {
+    const ignore = { current: false }
+    loadTable(ignore)
+    loadMetrics(ignore)
+    return () => { ignore.current = true }
+  }, [])
+
+  function fmtKg(v) {
+    if (v == null) return '--'
+    const n = Number(v)
+    return Number.isFinite(n) ? `${n.toLocaleString('pt-BR')} Kg` : String(v)
+  }
+
+  const mVal = (raw) => metrics.loading ? 'Carregando...' : metrics.error ? '--' : fmtKg(raw)
+
   return (
     <div className="pageStack">
       <div className="metricGrid compactMetrics">
-        <MiniMetric title="Saldo total" value="38.940 Kg" detail="Consolidado do estoque atual" />
-        <MiniMetric title="Entradas hoje" value="4.280 Kg" detail="Movimentação recebida no dia" />
-        <MiniMetric title="Saídas hoje" value="3.860 Kg" detail="Pedidos e baixas operacionais" />
+        <MiniMetric title="Saldo total"    value={mVal(metrics.saldo)}    detail="Consolidado do estoque atual" />
+        <MiniMetric title="Entradas hoje"  value={mVal(metrics.entradas)} detail="Movimentação recebida no dia" />
+        <MiniMetric title="Saídas hoje"    value={mVal(metrics.saidas)}   detail="Pedidos e baixas operacionais" />
       </div>
 
-      <SectionCard title="Posição de estoque" subtitle="Tabela central para saldos, mínimos, localização e alertas.">
+      <SectionCard title="Registrar Movimentação" subtitle="Selecione o produto, informe a validade, quantidade e o tipo de ação a ser registrada.">
+        <div className="filtersGrid">
+          <label className="field">
+            <span>Produto</span>
+            <select
+              value={stockForm.produto}
+              onChange={(e) => handleStockFormChange('produto', e.target.value)}
+            >
+              <option value="" disabled>Selecionar produto...</option>
+              {productOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+              {productOptions.length === 0 && (
+                <option disabled>Nenhum produto disponível</option>
+              )}
+            </select>
+          </label>
+
+          <label className="field">
+            <span>Validade</span>
+            <input
+              type="date"
+              value={stockForm.validade}
+              onChange={(e) => handleStockFormChange('validade', e.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span>Quantidade (Kg)</span>
+            <input
+              type="text"
+              placeholder="Ex: 50,00"
+              value={stockForm.quantidade}
+              onChange={(e) => handleStockFormChange('quantidade', e.target.value)}
+            />
+          </label>
+
+          <SelectField
+            label="Ação"
+            value={stockForm.acao}
+            onChange={(v) => handleStockFormChange('acao', v)}
+            options={['Adicionar', 'Retirar', 'Venda', 'Vencido']}
+            placeholder={false}
+          />
+        </div>
+
+        <div className="sectionActions">
+          <button className="btn" onClick={handleStockSalvar}>
+            <Plus size={15} />
+            Salvar Alterações
+          </button>
+          <button className="ghostBtn" onClick={handleStockClear}>
+            <X size={15} />
+            Limpar Campos
+          </button>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Tabela de Estoque" subtitle="Visualização completa dos produtos em estoque, preços e disponibilidade.">
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
             <span>Produto</span>
-            <span>Saldo</span>
+            <span>Validade</span>
+            <span>Preço PF</span>
+            <span>Preço CNPJ</span>
+            <span>Quantidade (Kg)</span>
             <span>Status</span>
           </div>
-    
-          {tableLoading ? (
-          <div className='row' style={{justifyContent: 'center', padding: '1.5rem', color: 'var(--text-muted, #888'}}>
-            Carregando estoque...
-          </div>
-        ) : rows.length === 0? (
-          <div className='row' style={{justifyContent: 'cemter', padding: '1.5rem', color: 'var(--text-muted, #888'}}>
-            Nenhum produto no estoque.
-          </div>
-        ) : rows.map((row) => (
-              <div className="row rowStock" key={`${row.product}`}>
-                <span>{row.product}</span>
-                <span>{row.quantity}</span>
-                <span>
-                  <span className={cx('pill',row.status === 'Ativo' ? 'ok' : 'mid')}>
-                    {row.status}
-                  </span>
-                  </span>
-                  </div>
-            ))}
-          </div>
-        </SectionCard>
-      </div>
+
+          {tableLoading && (
+            <div className="row rowStock">
+              <span style={{ gridColumn: '1 / -1', opacity: 0.5, padding: '4px 0' }}>Carregando estoque...</span>
+            </div>
+          )}
+
+          {!tableLoading && tableError && (
+            <div className="row rowStock">
+              <span style={{ gridColumn: '1 / -1', color: 'var(--red, #e55)', padding: '4px 0' }}>
+                Não foi possível carregar os dados do estoque.
+              </span>
+            </div>
+          )}
+
+          {!tableLoading && !tableError && rows.length === 0 && (
+            <div className="row rowStock">
+              <span style={{ gridColumn: '1 / -1', opacity: 0.5, padding: '4px 0' }}>Nenhum produto no estoque.</span>
+            </div>
+          )}
+
+          {!tableLoading && !tableError && rows.map((row) => (
+            <div className="row rowStock" key={row.product}>
+              <span>{row.product}</span>
+              <span>{formatValidade(row.validade)}</span>
+              <span>{row.precoPF   ?? '--'}</span>
+              <span>{row.precoCNPJ ?? '--'}</span>
+              <span>{row.quantity  ?? '--'}</span>
+              <span>
+                <span className={cx('pill', row.status === 'Disponível' ? 'ok' : row.status === 'Indisponível' ? 'bad' : row.status ? 'mid' : '')}>
+                  {row.status ?? '--'}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
   )
 }
 
@@ -1613,6 +1756,31 @@ function EmployeesPage() {
         <MiniMetric title="Quantidade de Cargos"     value={val(metrics.cargos)} detail="Cargos distintos cadastrados" />
       </div>
 
+      <SectionCard title="Cadastro de funcionário" subtitle="Preencha os campos para registrar um novo funcionário no sistema.">
+        <div className="filtersGrid">
+          <Field label="Nome"    placeholder="Nome completo"   value={form.nome}     onChange={(v) => handleFormChange('nome', v)} />
+          <Field label="Usuário" placeholder="Nome de usuário" value={form.username} onChange={(v) => handleFormChange('username', v)} />
+          <PasswordField label="Senha" placeholder="Senha de acesso" value={form.password} onChange={(v) => handleFormChange('password', v)} />
+          <SelectField label="Cargo" value={form.role} onChange={(v) => handleFormChange('role', v)} options={['Funcionário', 'Gerente']} placeholder={false} />
+          <SelectField label="Empresa" value={form.empresa} onChange={(v) => handleFormChange('empresa', v)} options={['Desfruta Polpas']} placeholder={false} />
+        </div>
+
+        <div className="sectionActions">
+          <button className="btn" onClick={handleCadastrarClick} disabled={submitting || deleting}>
+            <Plus size={15} />
+            Cadastrar funcionário
+          </button>
+          <button className="dangerBtn" onClick={handleDeletarClick} disabled={submitting || deleting}>
+            <Trash2 size={15} />
+            {deleting ? 'Deletando...' : 'Deletar funcionário'}
+          </button>
+          <button className="ghostBtn" onClick={handleClear} disabled={submitting || deleting}>
+            <X size={15} />
+            Limpar campos
+          </button>
+        </div>
+      </SectionCard>
+
       <SectionCard title="Tabela de Funcionários" subtitle="Visualização completa dos funcionários cadastrados na plataforma.">
         <div className="table modernTable employeesTable">
           <div className="row head rowEmployees">
@@ -1653,31 +1821,6 @@ function EmployeesPage() {
               </div>
             )
           })}
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Cadastro de funcionário" subtitle="Preencha os campos para registrar um novo funcionário no sistema.">
-        <div className="filtersGrid">
-          <Field label="Nome"    placeholder="Nome completo"   value={form.nome}     onChange={(v) => handleFormChange('nome', v)} />
-          <Field label="Usuário" placeholder="Nome de usuário" value={form.username} onChange={(v) => handleFormChange('username', v)} />
-          <PasswordField label="Senha" placeholder="Senha de acesso" value={form.password} onChange={(v) => handleFormChange('password', v)} />
-          <SelectField label="Cargo" value={form.role} onChange={(v) => handleFormChange('role', v)} options={['Funcionário', 'Gerente']} placeholder={false} />
-          <SelectField label="Empresa" value={form.empresa} onChange={(v) => handleFormChange('empresa', v)} options={['Desfruta Polpas']} placeholder={false} />
-        </div>
-
-        <div className="sectionActions">
-          <button className="btn" onClick={handleCadastrarClick} disabled={submitting || deleting}>
-            <Plus size={15} />
-            Cadastrar funcionário
-          </button>
-          <button className="dangerBtn" onClick={handleDeletarClick} disabled={submitting || deleting}>
-            <Trash2 size={15} />
-            {deleting ? 'Deletando...' : 'Deletar funcionário'}
-          </button>
-          <button className="ghostBtn" onClick={handleClear} disabled={submitting || deleting}>
-            <X size={15} />
-            Limpar campos
-          </button>
         </div>
       </SectionCard>
     </div>
