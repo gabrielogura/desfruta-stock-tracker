@@ -1,9 +1,14 @@
 import sqlite3
 import os
+from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, timedelta
 
+load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
+
 db_path = 'backend/data/desfrutastock.db'
+senhadaporra = os.getenv("SENHA_MASTER")
+pass_jwt = generate_password_hash(senhadaporra) if senhadaporra else None
 
 # Garante que o diretório exista
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -47,7 +52,8 @@ def inicializar_banco():
             password TEXT,
             role TEXT,
             empresa TEXT,
-            ultimo_acesso DATETIME DEFAULT (datetime('now', '-3 hours'))
+            data_criacao DATETIME DEFAULT (datetime('now', '-3 hours')),
+            ultimo_acesso DATETIME
         )
         """)
 
@@ -59,6 +65,17 @@ def inicializar_banco():
             acao TEXT,
             timestamp DATETIME DEFAULT (datetime('now', '-3 hours')),
             FOREIGN KEY (user_id) REFERENCES users(user_id)
+        )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS movimentacoes (
+                       id INTEGER PRIMARY KEY AUTOINCREMENT,
+                       sabor TEXT,
+                       quantidade_kg REAL,
+                       validade TEXT,
+                       acao TEXT,
+                       data TEXT
         )
         """)
 
@@ -77,6 +94,16 @@ def inicializar_banco():
         cursor.executemany(
             "INSERT INTO produtos_padrao (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel) VALUES (?, ?, ?, ?, ?)",
             produtos_padrao
+        )
+
+        usuarios_padrao = [
+            ("devallan", pass_jwt, "Allan Silva", "desenvolvedor", "Desfruta Polpas"),
+            ("devogura", pass_jwt, "Gabriel Ogura", "desenvolvedor", "Desfruta Polpas")
+        ]
+
+        cursor.executemany(
+            "INSERT INTO users (username, password, nome, role, empresa) VALUES (?, ?, ?, ?, ?)",
+            usuarios_padrao
         )
         conn.commit()
         print("Banco inicializado com sucesso!")
@@ -179,27 +206,6 @@ def deletar_produto(sabor):
         conn.execute('DELETE FROM produtos_padrao WHERE sabor = ?', (sabor,))
         if conn.total_changes == 0:
             raise ValueError("Produto não encontrado para exclusão.")
-        
-#Função para criar a tabela de movimentações(histórico)
-def criar_tabela_movimentacoes():
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS movimentacoes (
-                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                       sabor TEXT,
-                       quantidade_kg REAL,
-                       validade TEXT,
-                       acao TEXT,
-                       data TEXT
-        )
-        """)
-
-#Função para registrar as movimentações
-def registrar_movimentacao(sabor, quantidade_kg, validade, acao):
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
 
 # Função para registrar uma ação no log
 def registrar_log(nome_usuario, user_id, acao):

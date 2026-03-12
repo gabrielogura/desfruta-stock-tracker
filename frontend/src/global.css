@@ -432,6 +432,7 @@ form {
   flex-direction: column;
   gap: 8px;
   padding: 4px;
+  flex: 1;
 }
 
 .navItem {
@@ -497,8 +498,107 @@ form {
 .sidebarFooter {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  padding-top: 12px;
+}
+
+.sidebarFooterDivider {
+  height: 1px;
+  background: rgba(15, 23, 42, 0.08);
+  margin: 2px 0;
+}
+
+.sidebarUserAvatarOnly {
+  display: flex;
+  justify-content: center;
+}
+
+/* User Profile Card */
+.sidebarUserCard {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  padding-top: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(0, 128, 64, 0.07);
+  border: 1px solid rgba(0, 128, 64, 0.14);
+  transition: background 150ms ease;
+}
+
+.sidebarUserCard:hover {
+  background: rgba(0, 128, 64, 0.11);
+}
+
+.sidebarUserCardCollapsed {
+  justify-content: center;
+  padding: 10px;
+}
+
+.sidebarUserAvatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+}
+
+.sidebarUserAvatarImg {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(0, 128, 64, 0.25);
+}
+
+.sidebarUserAvatarInitials {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(0, 128, 64, 0.15);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.03em;
+  border: 2px solid rgba(0, 128, 64, 0.2);
+}
+
+.sidebarUserOnlineDot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #fff;
+}
+
+.sidebarUserInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sidebarUserName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.sidebarUserRole {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--green);
+  opacity: 0.8;
+  text-transform: capitalize;
 }
 
 .hintBox {
@@ -524,9 +624,9 @@ form {
   width: 100%;
   height: 48px;
   border-radius: 16px;
-  border: 1px solid rgba(0, 128, 64, 0.22);
-  background: rgba(0, 128, 64, 0.1);
-  color: var(--green);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -537,8 +637,8 @@ form {
 }
 
 .logoutBtn:hover {
-  filter: brightness(1.03);
-  background: rgba(0, 128, 64, 0.14);
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
 .logoutBtn:active {

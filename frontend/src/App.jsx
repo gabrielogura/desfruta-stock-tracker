@@ -222,29 +222,30 @@ function getDisplayNameFromResponse(data, fallback = '') {
   if (!data || typeof data !== 'object') return fallback
 
   const candidates = [
+    data.nome,
     data.name,
     data.full_name,
     data.fullName,
-    data.user,
     data.usuario,
-    data.nome,
+    data?.user?.nome,
     data?.user?.name,
     data?.user?.full_name,
     data?.user?.fullName,
     data?.user?.usuario,
-    data?.user?.nome,
+    data?.profile?.nome,
     data?.profile?.name,
     data?.profile?.full_name,
     data?.profile?.fullName,
-    data?.profile?.nome,
+    data?.data?.nome,
     data?.data?.name,
     data?.data?.full_name,
     data?.data?.fullName,
-    data?.data?.nome,
+    // username / user como último recurso
     data.username,
     data?.user?.username,
     data?.profile?.username,
     data?.data?.username,
+    typeof data.user === 'string' ? data.user : null,
   ]
 
   const match = candidates.find((value) => typeof value === 'string' && value.trim())
@@ -518,9 +519,70 @@ function LoginPage({ onAuthed }) {
 
 const EMPLOYEES_ROLES = ['gerente', 'desenvolvedor']
 
+function formatRoleLabel(role) {
+  if (!role) return ''
+  const map = {
+    gerente: 'Gerente',
+    desenvolvedor: 'Desenvolvedor',
+    funcionario: 'Funcionário',
+    funcionário: 'Funcionário',
+    admin: 'Administrador',
+    administrador: 'Administrador',
+  }
+  return map[role.toLowerCase()] || role.charAt(0).toUpperCase() + role.slice(1)
+}
+
+function UserProfileCard({ userName, userRole, userPhoto, collapsed }) {
+  const initials = getInitials(userName)
+  const roleLabel = formatRoleLabel(userRole)
+
+  if (collapsed) {
+    return (
+      <div className="sidebarUserAvatarOnly">
+        <div className="sidebarUserAvatar">
+          {userPhoto ? (
+            <img src={userPhoto} alt={userName} className="sidebarUserAvatarImg" />
+          ) : (
+            <span className="sidebarUserAvatarInitials">{initials}</span>
+          )}
+          <span className="sidebarUserOnlineDot" />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="sidebarUserCard">
+      <div className="sidebarUserAvatar">
+        {userPhoto ? (
+          <img src={userPhoto} alt={userName} className="sidebarUserAvatarImg" />
+        ) : (
+          <span className="sidebarUserAvatarInitials">{initials}</span>
+        )}
+        <span className="sidebarUserOnlineDot" />
+      </div>
+      <div className="sidebarUserInfo">
+        <span className="sidebarUserName">{userName}</span>
+        {roleLabel && <span className="sidebarUserRole">{roleLabel}</span>}
+      </div>
+    </div>
+  )
+}
+
 function MainLayout({ onLogout, userName, userRole }) {
   const [collapsed, setCollapsed] = useState(false)
   const [active, setActive] = useState('home')
+  const [userPhoto, setUserPhoto] = useState(null)
+
+  useEffect(() => {
+    api.get('/api/me').then((res) => {
+      const data = res?.data ?? {}
+      const photo =
+        data.photo ?? data.foto ?? data.avatar ?? data.picture ?? data.image_url ??
+        data?.profile?.photo ?? data?.profile?.avatar ?? data?.user?.photo ?? data?.user?.avatar ?? null
+      if (photo && typeof photo === 'string') setUserPhoto(photo)
+    }).catch(() => {})
+  }, [])
 
   const canSeeEmployees = EMPLOYEES_ROLES.includes(userRole?.toLowerCase?.() || '')
 
@@ -581,6 +643,13 @@ function MainLayout({ onLogout, userName, userRole }) {
             </nav>
 
             <div className="sidebarFooter">
+              <UserProfileCard
+                userName={userName}
+                userRole={userRole}
+                userPhoto={userPhoto}
+                collapsed={collapsed}
+              />
+              <div className="sidebarFooterDivider" />
               <button className="logoutBtn" onClick={onLogout} aria-label="Sair" title="Sair">
                 <LogOut size={18} />
                 {!collapsed && <span>Sair</span>}
@@ -607,12 +676,6 @@ function PageContent({ activeKey, userName, userRole }) {
         <div>
           <h1 className="h1">{current.label}</h1>
           <p className="muted">{current.description}</p>
-        </div>
-
-        <div className="topActions">
-          <div className="avatar" title={userName || 'Usuário'} aria-label={`Avatar de ${userName || 'usuário'}`}>
-            <span>{userInitials}</span>
-          </div>
         </div>
       </div>
 

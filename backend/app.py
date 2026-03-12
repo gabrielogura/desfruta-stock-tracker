@@ -7,7 +7,7 @@ from datetime import timedelta
 from core.database import (
 registrar_usuario, login_usuario, obter_logs, obter_info_usuario_por_username, verificar_produtos_menu, obter_metricas_funcionarios,
 tabela_produtos, cadastrar_produto, deletar_produto, registrar_log, deletar_logs_totais, atualizar_ultimo_acesso, tabela_funcionarios,
-cadastro_funcionario, deletar_funcionario, criar_tabela_movimentacoes
+cadastro_funcionario, deletar_funcionario
 )
 
 # -------------------------
@@ -19,7 +19,6 @@ load_dotenv()
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=8)
 jwt = JWTManager(app)
-criar_tabela_movimentacoes()
 
 # -------------------------
 # Ping-Pong para teste de API
@@ -104,12 +103,28 @@ def register():
 def me():
     # Obter o nome de usuário do token JWT e buscar as informações do usuário no banco de dados
     username = get_jwt_identity()
-    usuario = obter_info_usuario_por_username(username)
+    dados = obter_info_usuario_por_username(username)
+    usuario = dados["username"] if dados else None
+    nome = dados["nome"] if dados else None
+    role = dados["role"] if dados else None
 
     if not usuario:
         return jsonify({"msg": "Usuário não encontrado"}), 404
 
-    return jsonify({"user": usuario}), 200
+    return jsonify(
+        {
+            "user": usuario,
+            "nome": nome,
+            "role": role
+         }), 200
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    try:
+        # Verificar a saúde da API, retornando um status de sucesso se tudo estiver funcionando corretamente
+        return jsonify({"status": "sucesso", "message": "API is healthy!"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "message": "API is unhealthy!", "error": str(e)}), 500
 
 # -------------------------
 # Api's de Logs 
