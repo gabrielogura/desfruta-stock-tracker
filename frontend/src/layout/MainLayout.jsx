@@ -1,0 +1,51 @@
+import { useEffect, useMemo, useState } from 'react'
+import { cx } from '../utils/formatters'
+import { NAV, EMPLOYEES_ROLES } from '../constants/nav'
+import { Sidebar } from './Sidebar'
+import { PageContent } from './PageContent'
+import api from '../api/axiosInstance'
+
+export function MainLayout({ onLogout, userName, userRole }) {
+  const [collapsed, setCollapsed] = useState(false)
+  const [active, setActive] = useState('home')
+  const [userPhoto, setUserPhoto] = useState(null)
+
+  useEffect(() => {
+    api.get('/api/me').then((res) => {
+      const data = res?.data ?? {}
+      const photo =
+        data.photo ?? data.foto ?? data.avatar ?? data.picture ?? data.image_url ??
+        data?.profile?.photo ?? data?.profile?.avatar ?? data?.user?.photo ?? data?.user?.avatar ?? null
+      if (photo && typeof photo === 'string') setUserPhoto(photo)
+    }).catch(() => {})
+  }, [])
+
+  const canSeeEmployees = EMPLOYEES_ROLES.includes(userRole?.toLowerCase?.() || '')
+
+  const visibleNav = useMemo(
+    () => NAV.filter((item) => item.key !== 'employees' || canSeeEmployees),
+    [canSeeEmployees]
+  )
+
+  const safeActive = visibleNav.find((item) => item.key === active) ? active : 'home'
+
+  return (
+    <div className={cx('layout', collapsed && 'isCollapsed')}>
+      <Sidebar
+        visibleNav={visibleNav}
+        activeKey={safeActive}
+        onNavigate={setActive}
+        onLogout={onLogout}
+        userName={userName}
+        userRole={userRole}
+        userPhoto={userPhoto}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((v) => !v)}
+      />
+
+      <main className="main">
+        <PageContent activeKey={safeActive} userName={userName} userRole={userRole} />
+      </main>
+    </div>
+  )
+}

@@ -1,0 +1,31 @@
+const LOG_BADGE = {
+  add:     { label: 'Adicionado', bg: '#d1fae5', color: '#065f46', dot: '#10b981' },
+  delete:  { label: 'Deletado',   bg: '#fee2e2', color: '#991b1b', dot: '#ef4444' },
+  edit:    { label: 'Editado',    bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
+  neutral: { label: 'Ação',       bg: '#f1f5f9', color: '#475569', dot: '#94a3b8' },
+}
+
+function detectLogType(acao) {
+  if (!acao) return 'neutral'
+  const s = acao.toLowerCase()
+  if (s.includes('delet') || s.includes('remov') || s.includes('exclu') || s.includes('cancel') || s.includes('inativ')) return 'delete'
+  if (s.includes('adicion') || s.includes('cadastr') || s.includes('cri') || s.includes('insert') || s.includes('novo') || s.includes('nova') || s.includes('entrada')) return 'add'
+  if (s.includes('atualiz') || s.includes('edit') || s.includes('alter') || s.includes('modif') || s.includes('ajust') || s.includes('atuali')) return 'edit'
+  return 'neutral'
+}
+
+export function LogBadge({ acao }) {
+  const type = detectLogType(acao)
+  const { label, bg, color, dot } = LOG_BADGE[type]
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '3px 10px', borderRadius: 999,
+      background: bg, color,
+      fontSize: 11.5, fontWeight: 700, letterSpacing: '0.02em', whiteSpace: 'nowrap',
+    }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+      {label}
+    </span>
+  )
+}

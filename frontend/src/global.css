@@ -1077,6 +1077,7 @@ form {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  position: relative;
 }
 
 .field span {
@@ -1189,6 +1190,35 @@ form {
 
 .dangerBtn:active {
   transform: translateY(1px);
+}
+
+.warningBtn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease, background 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(202, 138, 4, 0.28);
+  background: rgba(234, 179, 8, 0.1);
+  color: #b45309;
+}
+
+.warningBtn:hover {
+  background: rgba(234, 179, 8, 0.18);
+  filter: brightness(1.02);
+}
+
+.warningBtn:active {
+  transform: translateY(1px);
+}
+
+.warningBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .rowDeleteBtn {
@@ -1523,4 +1553,159 @@ form {
   .button {
     height: 46px;
   }
+}
+
+/* ── Custom Dropdown (prodDropdown) ──────────────────────────── */
+.prodDropdown {
+  position: relative;
+  width: 100%;
+}
+
+.prodDropdownTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 16px;
+  height: 50px;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text, #0f172a);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  text-align: left;
+}
+
+.prodDropdownTrigger:hover {
+  border-color: rgba(15,23,42,0.28);
+}
+
+.prodDropdownTrigger.open {
+  border-color: rgba(0, 128, 64, 0.34);
+  box-shadow: 0 0 0 3px rgba(0, 128, 64, 0.08);
+}
+
+.prodDropdownTrigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.prodDropdownValue {
+  color: var(--text, #0f172a);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prodDropdownPlaceholder {
+  color: var(--muted, #94a3b8);
+  font-weight: 400;
+}
+
+.prodDropdownChevron {
+  flex-shrink: 0;
+  color: var(--muted, #64748b);
+  transition: transform 0.2s ease;
+}
+
+.prodDropdownChevron.rotated {
+  transform: rotate(180deg);
+}
+
+.prodDropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: #fff;
+  border: 1.5px solid rgba(15,23,42,0.1);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(15,23,42,0.12), 0 2px 8px rgba(15,23,42,0.06);
+  overflow: hidden;
+  animation: dropdownIn 0.15s cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.prodDropdownSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(15,23,42,0.07);
+  color: var(--muted, #64748b);
+}
+
+.prodDropdownSearch input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  color: var(--text, #0f172a);
+  background: transparent;
+}
+
+.prodDropdownSearch input::placeholder { color: #b0bac9; }
+
+.prodDropdownSearch button {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #b0bac9;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.prodDropdownSearch button:hover { color: #64748b; }
+
+.prodDropdownList {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.prodDropdownList::-webkit-scrollbar { width: 4px; }
+.prodDropdownList::-webkit-scrollbar-track { background: transparent; }
+.prodDropdownList::-webkit-scrollbar-thumb {
+  background: rgba(15,23,42,0.12);
+  border-radius: 4px;
+}
+
+.prodDropdownItem {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text, #0f172a);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.prodDropdownItem:hover { background: #f1f5f9; }
+
+.prodDropdownItem.selected {
+  background: rgba(0, 128, 64, 0.08);
+  color: var(--green, #008040);
+  font-weight: 600;
+}
+
+.prodDropdownEmpty {
+  padding: 12px;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--muted, #94a3b8);
 }

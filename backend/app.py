@@ -7,7 +7,7 @@ from datetime import timedelta
 from core.database import (
 registrar_usuario, login_usuario, obter_logs, obter_info_usuario_por_username, verificar_produtos_menu, obter_metricas_funcionarios,
 tabela_produtos, cadastrar_produto, deletar_produto, registrar_log, deletar_logs_totais, atualizar_ultimo_acesso, tabela_funcionarios,
-cadastro_funcionario, deletar_funcionario
+cadastro_funcionario, deletar_funcionario, atualizar_produto, verificar_produto_existe, obter_nome_produtos
 )
 
 # -------------------------
@@ -267,7 +267,44 @@ def deletar_produtodb():
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
     
-
+@app.route('/api/produtos/atualizar', methods=['PUT'])
+@jwt_required()
+def atualizar_produto_db():
+    try:
+        # Informações do usuário
+        username = get_jwt_identity()
+        info_user = obter_info_usuario_por_username(username)
+        nome_usuario = info_user['nome']
+        id_usuario = info_user['user_id']
+        # Dados do produto
+        dados = request.get_json()
+        sabor = dados.get('sabor')
+        preco_pf = dados.get('preco_pf')
+        preco_cnpj = dados.get('preco_cnpj')
+        quantidade_kg = dados.get('quantidade_kg')
+        disponivel = dados.get('disponivel')
+        # Validação do campo sabor, se não for fornecido, retorna erro
+        verify = verificar_produto_existe(sabor)
+        if not verify:
+            return jsonify({"status": "erro", "mensagem": "Produto não encontrado para atualização"}), 404
+        # Validação do campo disponivel, deve ser "Ativo" ou "Inativo", caso contrário, retorna erro
+        if disponivel:
+            disponivel = 1
+        elif not disponivel:
+            disponivel = 0
+        else:
+            return jsonify({"status": "erro", "mensagem": "Campo 'disponivel' deve ser 'Ativo' ou 'Inativo'"}), 400
+        # Validação dos campos obrigatórios, se algum campo não for fornecido, retorna erro
+        if not all([sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel is not None]):
+            return jsonify({"status": "erro", "mensagem": "Todos os campos são obrigatórios"}), 400
+        atualizar_produto(sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel)
+        registrar_log(nome_usuario, id_usuario, f"Atualizou o produto {sabor}")
+        return jsonify({"status": "sucesso", "mensagem": "Produto atualizado com sucesso!"}), 200
+    except ValueError as ve:
+        return jsonify({"status": "erro", "mensagem": str(ve)}), 404
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+    
 # -------------------------
 # Api's Gerenciar Estoque
 # -------------------------
@@ -284,6 +321,19 @@ def tabela_estoque_completa():
         return jsonify({"status": "erro", "mensagem": str(ve)}), 400
     except Exception as e:
         return jsonify({"satus": "erro", "mensagem": str(e)}), 500
+    
+@app.route('/api/estoque/produtos', methods=['GET'])
+@jwt_required()
+def produtos_estoque():
+    try:
+        # Obter a lista de produtos do estoque do banco de dados
+        dados = obter_nome_produtos()
+        return jsonify({"status": "sucesso", "dados": dados}), 200
+    # Tratamento de erros específicos
+    except ValueError as ve:
+        return jsonify({"status": "erro", "mensagem": str(ve)}), 400
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
     
 # -------------------------
 # APIs Funcionários

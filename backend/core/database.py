@@ -70,12 +70,13 @@ def inicializar_banco():
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS movimentacoes (
-                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                       sabor TEXT,
-                       quantidade_kg REAL,
-                       validade TEXT,
-                       acao TEXT,
-                       data TEXT
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sabor TEXT,
+                quantidade_kg REAL,
+                validade TEXT,
+                acao TEXT,
+                tipo TEXT,
+                data DATETIME DEFAULT (datetime('now', '-3 hours'))
         )
         """)
 
@@ -200,12 +201,31 @@ def cadastrar_produto(sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel):
         conn.execute('INSERT INTO produtos_padrao (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel) VALUES (?, ?, ?, ?, ?)', 
                      (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel))
         
+# Função para atualizar um produto existente
+def atualizar_produto(sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel):
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('UPDATE produtos_padrao SET preco_pf = ?, preco_cnpj = ?, quantidade_kg = ?, disponivel = ? WHERE sabor = ?', 
+                        (preco_pf, preco_cnpj, quantidade_kg, disponivel, sabor))
+            if cursor.rowcount == 0:
+                raise ValueError("Produto não encontrado para atualização.")
+    except ValueError as e:
+        print(f"Erro ao atualizar produto: {e}")
+            
 # Função deletar um produto
 def deletar_produto(sabor):
     with sqlite3.connect(db_path) as conn: 
         conn.execute('DELETE FROM produtos_padrao WHERE sabor = ?', (sabor,))
         if conn.total_changes == 0:
             raise ValueError("Produto não encontrado para exclusão.")
+        
+# Função para verificar se um produto existe
+def verificar_produto_existe(sabor):
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM produtos_padrao WHERE sabor = ?', (sabor,))
+        return cursor.fetchone()[0] > 0
 
 # Função para registrar uma ação no log
 def registrar_log(nome_usuario, user_id, acao):
@@ -239,6 +259,7 @@ def deletar_logs_totais():
     finally:
         if conn:
             conn.close()
+
     
 # Função para obter métricas dos funcionários
 def obter_metricas_funcionarios():
@@ -288,6 +309,56 @@ def deletar_funcionario(username, password):
     except Exception as e:
         print(f"Erro inesperado ao deletar funcionário: {e}")
     
+# Função para registrar movimentação de estoque
+def registrar_movimentacao(sabor, quantidade_kg, validade, acao, tipo):
+    try:
+        with sqlite3.connect(db_path) as conn:
+            conn.execute('INSERT INTO movimentacoes (sabor, quantidade_kg, validade, acao, tipo) VALUES (?, ?, ?, ?)', 
+                        (sabor, quantidade_kg, validade, acao, tipo))
+    except Exception as e:
+        print(f"Erro ao registrar movimentação: {e}")
+
+# Função para atualizar a quantidade de um produto no estoque
+def atualizar_quantidade_produto(sabor, nova_quantidade):
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('UPDATE produtos_padrao SET quantidade_kg = ? WHERE sabor = ?', (nova_quantidade, sabor))
+            if cursor.rowcount == 0:
+                raise ValueError("Produto não encontrado para atualização.")
+    except ValueError as e:
+        print(f"Erro ao atualizar quantidade: {e}")
+    except Exception as e:
+        print(f"Erro inesperado ao atualizar quantidade: {e}")
+
+# Função para atualizar a disponibilidade de um produto
+def atualizar_disponibilidade_produto(sabor):
+    with sqlite3.connect(db_path) as conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT quantidade_kg FROM produtos_padrao WHERE sabor = ?', (sabor,))
+            quantidade = cursor.fetchone()
+            if quantidade and quantidade[0] > 0:
+                cursor.execute('UPDATE produtos_padrao SET disponivel = 1 WHERE sabor = ?', (sabor,))
+                print(f"Produto '{sabor}' agora está disponível.")
+            elif quantidade:
+                cursor.execute('UPDATE produtos_padrao SET disponivel = 0 WHERE sabor = ?', (sabor,))
+                print(f"Produto '{sabor}' agora está indisponível.")
+        except Exception as e:
+            print(f"Erro ao verificar disponibilidade: {e}")
+
+# Função para obter os nomes de todos os produtos
+def obter_nome_produtos():
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT sabor FROM produtos_padrao')
+            produtos = cursor.fetchall()
+            return [produto[0] for produto in produtos]
+    except Exception as e:
+        print(f"Erro ao obter nomes dos produtos: {e}")
+        return []
+
 # --- Execução ---
 if __name__ == "__main__":
     inicializar_banco()
