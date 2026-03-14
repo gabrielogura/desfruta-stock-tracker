@@ -5,6 +5,8 @@ import { MiniMetric, SectionCard } from '../../components/Cards'
 import { SelectField } from '../../components/FormFields'
 import { cx, formatValidade, normalizeStockRows } from '../../utils/formatters'
 import './Stock.css'
+import { extractApiMessage } from '../../utils/api'
+import Toast from '../../components/Toast'
 
 function ProductDropdown({ value, onChange, options, loading }) {
   const [open, setOpen] = useState(false)
@@ -87,6 +89,8 @@ export function StockPage() {
   const [stockForm, setStockForm] = useState({ produto: '', validade: '', quantidade: '', acao: '', tipo: '' })
   const [productOptions, setProductOptions] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [toast, setToast] = useState(null)
 
   function handleStockFormChange(field, value) {
     setStockForm((prev) => ({ ...prev, [field]: value }))
@@ -96,8 +100,29 @@ export function StockPage() {
     setStockForm({ produto: '', validade: '', quantidade: '', acao: '', tipo: '' })
   }
 
-  function handleStockSalvar() {
-    // TODO: integrar com POST /api/estoque/movimentacao
+  function notify(next) {
+    setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
+  }
+
+  async function handleStockSalvar() {
+    if (submitting) return
+      const produto = stockForm.produto
+      const quantidade_kg = stockForm.quantidade
+      const validade = stockForm.validade
+      const acao = stockForm.acao
+      setSubmitting(true)
+    try {
+      await api.post('/api/estoque/movimentacoes', {sabor: produto, quantidade_kg, validade, acao})
+      notify({ type: 'success', title: 'Produto salvo', message: `${produto} foi salvo com sucesso.`})
+      handleStockClear()
+      await loadTable({ current: false })
+      await loadMetrics({ current: false })
+    } catch (err) {
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao salvar produto.'
+      notify({type: 'error', title: 'Erro ao salvar', message: msg})
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function loadProducts(ignore) {
@@ -213,6 +238,7 @@ export function StockPage() {
 
   return (
     <div className="pageStack">
+      <Toast toast={toast} onClose={() => setToast(null)} />
       <div className="metricGrid compactMetrics">
         <MiniMetric title="Total de Produtos em Kg" value={mVal(metrics.saldo)}    detail="Somatório de todos os produtos em estoque (kg)" />
         <MiniMetric title="Entradas hoje" value={mVal(metrics.entradas)} detail="Movimentação recebida no dia" />
