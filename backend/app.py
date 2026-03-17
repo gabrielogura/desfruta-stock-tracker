@@ -356,7 +356,7 @@ def movimentacoes_estoque():
         validade = dados.get('validade')
         acao = dados.get('acao')
 
-        if not all([sabor, validade, quantidade_kg, acao]):
+        if not all([sabor, quantidade_kg, acao]):
             return jsonify({'satus': 'erro', 'mensagem': 'Nao foi possível obter todas as informações'}), 400
         
         registrar_movimentacoes(sabor, quantidade_kg, validade, acao)

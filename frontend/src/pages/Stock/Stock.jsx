@@ -245,7 +245,7 @@ export function StockPage() {
         <MiniMetric title="Saídas hoje"   value={mVal(metrics.saidas)}   detail="Pedidos e baixas operacionais" />
       </div>
 
-      <SectionCard title="Registrar Movimentação" subtitle="Selecione o produto, informe a validade, quantidade e o tipo de ação a ser registrada.">
+      <SectionCard title="Registrar Movimentação" subtitle="Selecione o produto, quantidade e o tipo de ação a ser registrada.">
         <div className="filtersGrid">
           <div className="field">
             <span>Produto</span>
@@ -257,10 +257,10 @@ export function StockPage() {
             />
           </div>
 
-          <label className="field">
+          {/* <label className="field">
             <span>Validade</span>
             <input type="date" value={stockForm.validade} onChange={(e) => handleStockFormChange('validade', e.target.value)} />
-          </label>
+          </label> */}
 
           <label className="field">
             <span>Quantidade (Kg)</span>
@@ -275,6 +275,7 @@ export function StockPage() {
             placeholder="Selecionar ação..."
           />
 
+        {stockForm.acao === 'Venda' && (
           <SelectField
             label="Tipo"
             value={stockForm.tipo}
@@ -282,6 +283,7 @@ export function StockPage() {
             options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
             placeholder="Selecionar tipo..."
           />
+        )}
         </div>
 
         <div className="sectionActions">
@@ -300,7 +302,7 @@ export function StockPage() {
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
             <span>Produto</span>
-            <span>Validade</span>
+            {/* <span>Validade</span> */}
             <span>Preço PF</span>
             <span>Preço CNPJ</span>
             <span>Quantidade (Kg)</span>
@@ -333,7 +335,7 @@ export function StockPage() {
             return filtered.map((row) => (
               <div className="row rowStock" key={row.product}>
                 <span>{row.product}</span>
-                <span>{formatValidade(row.validade)}</span>
+                {/* <span>{formatValidade(row.validade)}</span> */}
                 <span>{row.precoPF   ?? '--'}</span>
                 <span>{row.precoCNPJ ?? '--'}</span>
                 <span>{row.quantity  ?? '--'}</span>
