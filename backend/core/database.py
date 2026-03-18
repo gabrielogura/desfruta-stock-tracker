@@ -244,6 +244,12 @@ def registrar_movimentacoes(sabor, quantidade_kg, validade, acao):
                     conn.execute("UPDATE produtos_padrao SET quantidade_kg = quantidade_kg + ? WHERE sabor = ?", (quantidade_kg, sabor))
                 else:
                     conn.execute("UPDATE produtos_padrao SET quantidade_kg = quantidade_kg - ? WHERE sabor = ?", (quantidade_kg, sabor))
+                
+                cursor.execute("""
+                    UPDATE produtos_padrao
+                    SET disponivel = CASE WHEN quantidade_kg > 0 THEN 1 ELSE 0 END
+                    WHERE sabor = ?
+                """, (sabor,))
 
         except Exception as e:
             print(f"erro ao registrar log: {e}")
