@@ -110,13 +110,14 @@ export function StockPage() {
       const quantidade_kg = stockForm.quantidade
       const validade = stockForm.validade
       const acao = stockForm.acao
-      if (acao === 'Venda' && !stockForm.tipo) {
+      const tipo = stockForm.tipo
+      if (acao === 'Venda' && !tipo) {
         notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o tipo (PF ou CNPJ) para registrar uma venda.'})
         return
       }
       setSubmitting(true)
     try {
-      await api.post('/api/estoque/movimentacoes', {sabor: produto, quantidade_kg, validade, acao})
+      await api.post('/api/estoque/movimentacoes', {sabor: produto, quantidade_kg, validade, acao, tipo})
       notify({ type: 'success', title: 'Produto salvo', message: `${produto} foi salvo com sucesso.`})
       handleStockClear()
       await loadTable({ current: false })

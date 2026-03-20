@@ -369,11 +369,12 @@ def movimentacoes_estoque():
         quantidade_kg = dados.get('quantidade_kg')
         validade = dados.get('validade')
         acao = dados.get('acao')
+        tipo = dados.get('tipo')
 
         if not all([sabor, quantidade_kg, acao]):
             return jsonify({'satus': 'erro', 'mensagem': 'Nao foi possível obter todas as informações'}), 400
         
-        registrar_movimentacoes(sabor, quantidade_kg, validade, acao)
+        registrar_movimentacoes(sabor, quantidade_kg, validade, acao, tipo)
         return jsonify({'status': 'sucesso', 'mensagem': 'Movimentação registrada com sucesso!'}), 201
     
     except ValueError as ve:

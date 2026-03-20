@@ -228,7 +228,7 @@ def verificar_produto_existe(sabor):
         return cursor.fetchone()[0] > 0
 
 #Função registrar movimentações
-def registrar_movimentacoes(sabor, quantidade_kg, validade, acao):
+def registrar_movimentacoes(sabor, quantidade_kg, validade, acao, tipo):
         try:
             quantidade_kg = float(str(quantidade_kg).replace(',', '.'))
             br_time = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d %H:%M:%S')
@@ -239,7 +239,7 @@ def registrar_movimentacoes(sabor, quantidade_kg, validade, acao):
 
                 if acao != 'Adicionar' and quantidade_kg > saldo_total:
                     raise ValueError(f'Saldo insuficiente. Saldo atual: {saldo_total} Kg')
-                conn.execute("INSERT INTO movimentacoes (sabor, quantidade_kg, validade, acao, data) VALUES (?, ?, ?, ?, ?)", (sabor, quantidade_kg, validade, acao, br_time))
+                conn.execute("INSERT INTO movimentacoes (sabor, quantidade_kg, validade, acao, data, tipo) VALUES (?, ?, ?, ?, ?, ?)", (sabor, quantidade_kg, validade, acao, br_time, tipo))
                 if acao == 'Adicionar':
                     conn.execute("UPDATE produtos_padrao SET quantidade_kg = quantidade_kg + ? WHERE sabor = ?", (quantidade_kg, sabor))
                 else:
