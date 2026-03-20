@@ -467,11 +467,36 @@ def obter_volume_vendido_mes():
     try:
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT SUM(quantidade_kg) FROM movimentacoes WHERE acao = 'Venda' AND strftime('%Y-%m', data) = strftime('%Y-%m', 'now', '-3 hours')")
+            cursor.execute("""
+                SELECT SUM(quantidade_kg)
+                FROM movimentacoes
+                WHERE acao = 'Venda'
+                AND strftime('%Y-%m', data) = strftime('%Y-%m', 'now', '-3 hours')""")
             kg_mes = cursor.fetchone() [0] or 0
             return kg_mes
     except Exception as e:
         print(f"erro ao obter o volume vendido do mês: {e}")
+
+def obter_faturamento_mes():
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT SUM (
+                    m.quantidade_kg * CASE
+                        WHEN m.tipo = 'Pessoa Física (PF)' THEN p.preco_pf
+                        ELSE p.preco_cnpj
+                    END
+                )
+                FROM movimentacoes m
+                JOIN produtos_padrao p ON m.sabor = p.sabor
+                WHERE m.acao = 'Venda'
+                AND strftime('%Y-%m', m.data) = strftime('%Y-%m', 'now', '-3 hours')
+            """)
+            faturamento_mes = cursor.fetchone() [0] or 0
+            return faturamento_mes
+    except Exception as e:
+        print(f"erro ao obter o faturamento do mês: {e}")
 
 
 # --- Execução ---

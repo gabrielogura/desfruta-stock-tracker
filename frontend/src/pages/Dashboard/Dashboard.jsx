@@ -7,6 +7,8 @@ import './Dashboard.css'
 export function DashboardPage() {
   const [volumeLoading, setVolumeLoading] = useState(true)
   const [volumeKg, setVolumeKg] = useState(null)
+  const [faturamentoLoading, setFaturamentoLoading] = useState(true)
+  const [faturamento, setFaturamento] = useState(null)
 
   async function loadVolume(ignore) {
     setVolumeLoading(true)
@@ -23,9 +25,30 @@ export function DashboardPage() {
     }
   }
 
+  async function loadFaturamento(ignore) {
+    setFaturamentoLoading(true)
+    try {
+      const res = await api.get('/api/dashboard/faturamento')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setFaturamento(data.dados ?? 0)
+    } catch {
+      if (ignore?.current) return
+      setFaturamento(null)
+    } finally {
+      if (!ignore.current) setFaturamentoLoading(false)
+    }
+  }
+
   useEffect(() => {
     const ignore = { current: false }
     loadVolume(ignore)
+    return () => { ignore.current = true }
+  }, [])
+
+  useEffect(() => {
+    const ignore = { current: false }
+    loadFaturamento(ignore)
     return () => { ignore.current = true }
   }, [])
 
@@ -35,10 +58,13 @@ export function DashboardPage() {
         <MiniMetric
           title="Volume vendido"
           value={volumeLoading ? 'Carregando...' : volumeKg != null ? `${Number(volumeKg).toLocaleString('pt-BR')} Kg` : '--'}
-          detail="Total vendo no mês atual"
+          detail="Total faturado no mês atual"
           />
-        <MiniMetric title="Ticket médio" value="R$ 418" detail="+4,1% no período" />
-        <MiniMetric title="Margem estimada" value="26%" detail="Baseada em mix e custo médio" />
+        <MiniMetric
+          title="Faturamento mensal"
+          value={faturamentoLoading ? 'Carregando...' : faturamento != null ? `R$${Number(faturamento).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
+          detail="+4,1% no período"
+          />
       </div>
 
       <div className="splitGrid twoColsTop">
