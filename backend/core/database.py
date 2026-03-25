@@ -498,6 +498,26 @@ def obter_faturamento_mes():
     except Exception as e:
         print(f"erro ao obter o faturamento do mês: {e}")
 
+def obter_ticket_medio_mes():
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    SUM(m.quantidade_kg * CASE WHEN m.tipo = 'Pessoa Física (PF)' THEN p.preco_pf ELSE p.preco_cnpj END),
+                    COUNT (*)
+                FROM movimentacoes m
+                JOIN produtos_padrao p ON m.sabor = p.sabor
+                WHERE m.acao = 'Venda'
+                AND strftime('%Y-%m', m.data) = strftime('%Y-%m', 'now', '-3 hours')
+            """)
+            resultado = cursor.fetchone()
+            faturamento = resultado [0] or 0
+            contagem = resultado [1] or 1
+            ticket_medio = faturamento / contagem
+            return ticket_medio
+    except Exception as e:
+        print(f"erro ao obter o ticket médio: {e}")
 
 # --- Execução ---
 if __name__ == "__main__":

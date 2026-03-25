@@ -9,6 +9,8 @@ export function DashboardPage() {
   const [volumeKg, setVolumeKg] = useState(null)
   const [faturamentoLoading, setFaturamentoLoading] = useState(true)
   const [faturamento, setFaturamento] = useState(null)
+  const [ticketMedioLoading, setTicketMedioLoading] = useState(true)
+  const [ticketMedio, setTicketMedio] = useState(null)
 
   async function loadVolume(ignore) {
     setVolumeLoading(true)
@@ -36,19 +38,30 @@ export function DashboardPage() {
       if (ignore?.current) return
       setFaturamento(null)
     } finally {
-      if (!ignore.current) setFaturamentoLoading(false)
+      if (!ignore?.current) setFaturamentoLoading(false)
+    }
+  }
+
+  async function loadTicketMedio(ignore) {
+    setTicketMedioLoading(true)
+    try {
+      const res = await api.get('/api/dashboard/ticket_medio')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setTicketMedio(data.dados ?? 0)
+    } catch {
+      if (ignore?.current) return
+      setTicketMedio(null)
+    } finally {
+      if (!ignore?.current) setTicketMedioLoading(false)
     }
   }
 
   useEffect(() => {
     const ignore = { current: false }
     loadVolume(ignore)
-    return () => { ignore.current = true }
-  }, [])
-
-  useEffect(() => {
-    const ignore = { current: false }
     loadFaturamento(ignore)
+    loadTicketMedio(ignore)
     return () => { ignore.current = true }
   }, [])
 
@@ -58,13 +71,18 @@ export function DashboardPage() {
         <MiniMetric
           title="Volume vendido"
           value={volumeLoading ? 'Carregando...' : volumeKg != null ? `${Number(volumeKg).toLocaleString('pt-BR')} Kg` : '--'}
-          detail="Total faturado no mês atual"
+          detail="Total vendido no mês atual"
           />
         <MiniMetric
           title="Faturamento mensal"
           value={faturamentoLoading ? 'Carregando...' : faturamento != null ? `R$${Number(faturamento).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
-          detail="+4,1% no período"
+          detail="Total faturado no mês atual"
           />
+        <MiniMetric
+          title="Ticket Médio"
+          value={ticketMedioLoading ? 'Carregando...' : ticketMedio != null ? `R$${Number(ticketMedio).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
+          detail="Valor médio por venda no mês"
+        />
       </div>
 
       <div className="splitGrid twoColsTop">
