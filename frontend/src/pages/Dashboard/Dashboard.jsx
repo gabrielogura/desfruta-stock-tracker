@@ -7,10 +7,21 @@ import './Dashboard.css'
 export function DashboardPage() {
   const [volumeLoading, setVolumeLoading] = useState(true)
   const [volumeKg, setVolumeKg] = useState(null)
+  const [volumeAnteriorLoading, setVolumeAnteriorLoading] = useState(true)
+  const [volumeKgAnterior, setVolumeKgAnterior] = useState(null)
+  const variacao_volume_kg = volumeKg != null && volumeKgAnterior ? ((volumeKg - volumeKgAnterior) / volumeKgAnterior) * 100 : null
+
   const [faturamentoLoading, setFaturamentoLoading] = useState(true)
   const [faturamento, setFaturamento] = useState(null)
+  const [faturamentoAnteriorLoading, setFaturamentoAnteriorLoading] = useState(true)
+  const [faturamentoAnterior, setFaturamentoAnterior] = useState(null)
+  const variacao_faturamento = faturamento != null && faturamentoAnterior ? (( faturamento - faturamentoAnterior) / faturamentoAnterior) * 100 : null
+  
   const [ticketMedioLoading, setTicketMedioLoading] = useState(true)
   const [ticketMedio, setTicketMedio] = useState(null)
+  const [ticketMedioAnteriorLoading, setTicketMedioAnteriorLoading] = useState(true)
+  const [ticketMedioAnterior, setTicketMedioAnterior] = useState(null)
+  const varacao_ticket_medio = ticketMedio != null && ticketMedioAnterior ? ((ticketMedio - ticketMedioAnterior) / ticketMedioAnterior) * 100 : null
 
   async function loadVolume(ignore) {
     setVolumeLoading(true)
@@ -24,6 +35,21 @@ export function DashboardPage() {
       setVolumeKg(null)
     } finally {
       if (!ignore?.current) setVolumeLoading(false)
+    }
+  }
+
+  async function loadVolumeAnterior(ignore) {
+    setVolumeAnteriorLoading(true)
+    try {
+      const res = await api.get('/api/dashboard/volume-vendido-anterior')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setVolumeKgAnterior(data.dados ?? 0)
+    } catch {
+      if (ignore?.current) return
+      setVolumeKgAnterior(null)
+    } finally {
+      if (!ignore?.current) setVolumeAnteriorLoading(false)
     }
   }
 
@@ -42,6 +68,21 @@ export function DashboardPage() {
     }
   }
 
+  async function loadFaturamentoAnterior(ignore) {
+    setFaturamentoAnteriorLoading(true)
+    try {
+      const res = await api.get('/api/dashboard/faturamento-anterior')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setFaturamentoAnterior(data?.dados ?? 0)
+    } catch {
+      if (ignore?.current) return
+      setFaturamentoAnterior(null)
+    } finally {
+      if (!ignore?.current) setFaturamentoAnteriorLoading(false)
+    }
+  }
+
   async function loadTicketMedio(ignore) {
     setTicketMedioLoading(true)
     try {
@@ -57,10 +98,30 @@ export function DashboardPage() {
     }
   }
 
+  async function loadTicketMedioAnterior(ignore) {
+    setTicketMedioAnteriorLoading(true)
+    try {
+      const res = await api.get('/api/dashboard/ticket_medio-anterior')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setTicketMedioAnterior(data?.dados ?? 0)
+    } catch {
+      if (ignore.current) return
+      setTicketMedio(null)
+    } finally {
+      if (!ignore?.current) setTicketMedioAnteriorLoading(false)
+    }
+  }
+
   useEffect(() => {
     const ignore = { current: false }
     loadVolume(ignore)
+    loadVolumeAnterior(ignore)
+
     loadFaturamento(ignore)
+    loadFaturamentoAnterior(ignore)
+
+    loadTicketMedioAnterior(ignore)
     loadTicketMedio(ignore)
     return () => { ignore.current = true }
   }, [])
@@ -71,17 +132,35 @@ export function DashboardPage() {
         <MiniMetric
           title="Volume vendido"
           value={volumeLoading ? 'Carregando...' : volumeKg != null ? `${Number(volumeKg).toLocaleString('pt-BR')} Kg` : '--'}
-          detail="Total vendido no mês atual"
+          detail={
+            variacao_volume_kg != null
+            ? <span style={{ color: variacao_volume_kg >= 0 ? 'green' : 'red' }}>
+                {variacao_volume_kg >= 0 ? '+' : ''}{variacao_volume_kg.toFixed(1)}% vs mês anterior
+              </span>
+            : "Sem dados do mês anterior"
+          }
           />
         <MiniMetric
           title="Faturamento mensal"
           value={faturamentoLoading ? 'Carregando...' : faturamento != null ? `R$${Number(faturamento).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
-          detail="Total faturado no mês atual"
+          detail={
+            variacao_faturamento != null
+            ? <span style={{ color: variacao_faturamento >= 0 ? 'green' : 'red' }}>
+                {variacao_faturamento >= 0 ? '+' : ''}{variacao_faturamento.toFixed(1)}% vs mês anterior
+              </span>
+            : "Sem dados do mês anterior"
+          }
           />
         <MiniMetric
           title="Ticket Médio"
           value={ticketMedioLoading ? 'Carregando...' : ticketMedio != null ? `R$${Number(ticketMedio).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
-          detail="Valor médio por venda no mês"
+          detail={
+            varacao_ticket_medio != null
+            ? <span style={{ color: varacao_ticket_medio >= 0 ? 'green' : 'red' }}>
+                {varacao_ticket_medio >= 0 ? '+' : ''}{varacao_ticket_medio.toFixed(1)}% vs mês anterior
+              </span>
+            : "Sem dados do mês anterior"
+          }
         />
       </div>
 
