@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { MiniMetric, SectionCard } from '../../components/Cards'
 import { DASHBOARD_SUMMARY } from '../../constants/nav'
 import './Dashboard.css'
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts'
 
 export function DashboardPage() {
   const [volumeLoading, setVolumeLoading] = useState(true)
@@ -13,6 +14,8 @@ export function DashboardPage() {
 
   const [faturamentoLoading, setFaturamentoLoading] = useState(true)
   const [faturamento, setFaturamento] = useState(null)
+  const [faturamentoPorTipoLoading, setFaturamentoPorTipoLoading] = useState(true)
+  const [faturamentoPorTipo, setFaturamentoPorTipo] = useState(null)
   const [faturamentoAnteriorLoading, setFaturamentoAnteriorLoading] = useState(true)
   const [faturamentoAnterior, setFaturamentoAnterior] = useState(null)
   const variacao_faturamento = faturamento != null && faturamentoAnterior ? (( faturamento - faturamentoAnterior) / faturamentoAnterior) * 100 : null
@@ -68,6 +71,21 @@ export function DashboardPage() {
     }
   }
 
+  async function loadFaturamentoPorTipo(ignore) {
+    setFaturamentoPorTipoLoading(true)
+    try {
+      const res = await api.get('/api/dashboard/faturamento-por-tipo')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setFaturamentoPorTipo(data.dados ?? 0)
+    } catch {
+      if (ignore?.current) return
+      setFaturamentoPorTipo(null)
+    } finally {
+      if (!ignore?.current) setFaturamentoPorTipoLoading(false)
+    }
+  }
+
   async function loadFaturamentoAnterior(ignore) {
     setFaturamentoAnteriorLoading(true)
     try {
@@ -119,6 +137,7 @@ export function DashboardPage() {
     loadVolumeAnterior(ignore)
 
     loadFaturamento(ignore)
+    loadFaturamentoPorTipo(ignore)
     loadFaturamentoAnterior(ignore)
 
     loadTicketMedioAnterior(ignore)
@@ -165,6 +184,33 @@ export function DashboardPage() {
       </div>
 
       <div className="splitGrid twoColsTop">
+        <SectionCard title="Faturamento PF vs CNPJ" subtitle="Distribuição do faturamento por tipo de cliente no mês atual">
+          <div>
+            {faturamentoPorTipoLoading ? (
+              <p>Carregando...</p>
+            ) : (
+              <PieChart width={700} height={400}>
+                <Pie
+                  data={[
+                    { name: 'Pessoa Física', value : faturamentoPorTipo?.[0] ?? 0 },
+                    { name: 'CNPJ', value : faturamentoPorTipo?.[1] ?? 0},
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  dataKey="value"
+                  label={({ name, value }) => `${name}: R$${Number(value).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
+                >
+                  <Cell fill="#22c55e"/>
+                  <Cell fill="#f97316"/>
+                </Pie>
+                <Tooltip formatter={(v) => `R$${Number(v).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`} />
+                <Legend />
+              </PieChart>
+            )}
+          </div>
+        </SectionCard>
+
         <SectionCard title="Área reservada para gráficos" subtitle="Blocos prontos para conectar bibliotecas como Recharts ou ApexCharts.">
           <div className="chartPlaceholder tall">
             <div className="chartBars">

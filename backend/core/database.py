@@ -550,7 +550,7 @@ def obter_ticket_medio_mes():
             """)
             resultado = cursor.fetchone()
             faturamento = resultado [0] or 0
-            contagem = resultado [1] or 1
+            contagem = resultado [1] or 0
             ticket_medio = faturamento / contagem
             return ticket_medio
     except Exception as e:
@@ -571,11 +571,31 @@ def obter_ticket_medio_mes_anterior():
             """)
             resultado = cursor.fetchone()
             faturamento_anterior = resultado [0] or 0
-            contagem_anterior = resultado [1] or 1
+            contagem_anterior = resultado [1] or 0
             ticket_medio_anterior = faturamento_anterior / contagem_anterior
             return ticket_medio_anterior
     except Exception as e:
         print(f"erro ao obter ticket médio anterior: {e}")
+
+def obter_faturamento_por_tipo_mes():
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    SUM(CASE WHEN m.tipo = 'Pessoa Física (PF)' THEN m.quantidade_kg * p.preco_pf ELSE 0 END),
+                    SUM(CASE WHEN m.tipo = 'Pessoa Jurídica (CNPJ)' THEN m.quantidade_kg * p.preco_cnpj ELSE 0 END)
+                FROM movimentacoes m
+                JOIN produtos_padrao p ON m.sabor = p.sabor
+                WHERE m.acao = 'Venda'
+                AND strftime('%Y-%m', m.data) = strftime('%Y-%m', 'now', '-3 hours')
+            """)
+            resultado = cursor.fetchone()
+            faturamento_pf = resultado [0] or 0
+            faturamento_cnpj = resultado [1] or 1
+            return faturamento_pf, faturamento_cnpj
+    except Exception as e:
+        print(f"erro ao obter faturamento por tipo: {e}")
 
 # --- Execução ---
 if __name__ == "__main__":
