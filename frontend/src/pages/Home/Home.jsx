@@ -9,6 +9,9 @@ import './Home.css'
 
 export function HomePage() {
   const [metrics, setMetrics] = useState({ loading: true, error: '', totalKg: 0, disponiveis: 0, total: 0 })
+  const [faturamentoLoading, setFaturamentoLoading] = useState(true)
+  const [faturamento, setFaturamento] = useState(null)
+
 
   useEffect(() => {
     let ignore = false
@@ -36,7 +39,22 @@ export function HomePage() {
       }
     }
 
+    async function loadFaturamento() {
+      try {
+        const res = await api.get('/api/dashboard/faturamento')
+        if (ignore) return
+        const data = res?.data ?? {}
+        setFaturamento(data?.dados ?? 0)
+      } catch {
+        if (ignore) return
+        setFaturamento(null)
+      } finally {
+        if (!ignore) setFaturamentoLoading(false)
+      }
+    }
+
     loadMetrics()
+    loadFaturamento()
     return () => { ignore = true }
   }, [])
 
@@ -52,9 +70,19 @@ export function HomePage() {
         if (metrics.error)   return { ...item, value: '--', hint: metrics.error }
         return { ...item, value: `${metrics.disponiveis}/${metrics.total}`, hint: 'Variações disponíveis em relação ao total cadastrado.' }
       }
+      if (item.key === 'billing') {
+        if (faturamentoLoading) return {...item, value: 'Carregando...', hint: 'Consultando faturamento.'}
+        if (faturamento == null) return {...item, value: '--', hint: 'Não foi possível carregar o faturamento.'}
+        return {
+          ...item,
+          label: 'Faturamento mensal',
+          value: `R$${Number(faturamento).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`,
+          hint: 'Total faturado no mês atual'
+        }
+      }
       return item
     })
-  }, [metrics])
+  }, [metrics, faturamento, faturamentoLoading])
 
   return (
     <div className="pageStack">

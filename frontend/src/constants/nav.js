@@ -50,8 +50,8 @@ export const HOME_METRICS = [
   },
   {
     key: 'billing',
-    label: 'Faturamento mensal - Dados Fictícios',
-    value: 'R$ 186.400',
+    label: 'Faturamento mensal',
+    value: 'R$100.000,00',
     hint: 'Estrutura preparada para consolidar o mês corrente e comparar com o anterior.',
     tone: 'dark',
   },

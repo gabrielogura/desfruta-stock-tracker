@@ -212,8 +212,7 @@ export function ProductsPage() {
 
       <div className="metricGrid compactMetrics">
         <MiniMetric title="Produtos cadastrados"   value={metricTotal}       detail="Total de produtos no sistema" />
-        <MiniMetric title="Produtos Ativos"         value={metricAtivos}      detail="Produtos disponíveis para venda" />
-        <MiniMetric title="Taxa de produtos ativos" value={metricPorcentagem} detail="Percentual de produtos ativos" />
+        <MiniMetric title="Produtos Ativos"        value={metricAtivos}      detail="Produtos disponíveis para venda" />
       </div>
 
       <SectionCard title="Cadastro Rápido" subtitle="Cadastro completo do produto, contendo todos os campos necessários.">
