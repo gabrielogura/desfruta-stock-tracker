@@ -597,6 +597,29 @@ def obter_faturamento_por_tipo_mes():
     except Exception as e:
         print(f"erro ao obter faturamento por tipo: {e}")
 
+def obter_faturamento_anual():
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT
+                    strftime('%m', m.data) as mes,
+                    SUM(m.quantidade_kg * CASE
+                        WHEN m.tipo = 'Pessoa Física (PF)' THEN p.preco_pf
+                        ELSE p.preco_cnpj
+                    END)
+                FROM movimentacoes m
+                JOIN produtos_padrao p ON m.sabor = p.sabor
+                WHERE m.acao = 'Venda'
+                AND strftime('%Y', m.data) = strftime('%Y', 'now', '-3 hours')
+                GROUP BY mes
+                ORDER BY mes ASC
+            """)
+            resultado = cursor.fetchall()
+            return resultado
+    except Exception as e:
+        print(f'erro ao obter faturamento anual: {e}')
+
 # --- Execução ---
 if __name__ == "__main__":
     inicializar_banco()

@@ -17,7 +17,7 @@ export const NAV = [
     key: 'dashboard',
     label: 'Dashboard',
     icon: LayoutDashboard,
-    description: 'Resumo analítico, comparativos mensais e blocos preparados para gráficos.',
+    description: 'Resumo analítico, comparativos mensais e gráficos.',
   },
   {
     key: 'stock',

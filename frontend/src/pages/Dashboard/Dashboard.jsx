@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { MiniMetric, SectionCard } from '../../components/Cards'
 import { DASHBOARD_SUMMARY } from '../../constants/nav'
 import './Dashboard.css'
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export function DashboardPage() {
   const [volumeLoading, setVolumeLoading] = useState(true)
@@ -18,6 +18,9 @@ export function DashboardPage() {
   const [faturamentoPorTipo, setFaturamentoPorTipo] = useState(null)
   const [faturamentoAnteriorLoading, setFaturamentoAnteriorLoading] = useState(true)
   const [faturamentoAnterior, setFaturamentoAnterior] = useState(null)
+  const [faturamentoAnualLoading, setFaturamentoAnualLoading] = useState(true)
+  const [faturamentoAnual, setFaturamentoAnual] = useState(null)
+
   const variacao_faturamento = faturamento != null && faturamentoAnterior ? (( faturamento - faturamentoAnterior) / faturamentoAnterior) * 100 : null
   
   const [ticketMedioLoading, setTicketMedioLoading] = useState(true)
@@ -101,6 +104,21 @@ export function DashboardPage() {
     }
   }
 
+  async function loadFaturamentoAnual(ignore) {
+    setFaturamentoAnualLoading(true)
+    try{
+      const res = await api.get('/api/dashboard/faturamento_anual')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setFaturamentoAnual(data?.dados ?? 0)
+    } catch {
+      if (ignore?.current) return
+      setFaturamentoAnual(null)
+    } finally {
+      if (!ignore?.current) setFaturamentoAnualLoading(false)
+    }
+  }
+
   async function loadTicketMedio(ignore) {
     setTicketMedioLoading(true)
     try {
@@ -139,11 +157,20 @@ export function DashboardPage() {
     loadFaturamento(ignore)
     loadFaturamentoPorTipo(ignore)
     loadFaturamentoAnterior(ignore)
+    loadFaturamentoAnual(ignore)
 
     loadTicketMedioAnterior(ignore)
     loadTicketMedio(ignore)
     return () => { ignore.current = true }
   }, [])
+
+  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+  const dadosGrafico = meses.map((nome, i) =>{
+    const mes = String(i + 1).padStart(2, '0')
+    const encontrado = (faturamentoAnual ?? []).find(([m]) => m === mes)
+    return { name: nome, value: encontrado ? encontrado[1] : 0}
+  })
 
   return (
     <div className="pageStack">
@@ -151,33 +178,24 @@ export function DashboardPage() {
         <MiniMetric
           title="Volume vendido"
           value={volumeLoading ? 'Carregando...' : volumeKg != null ? `${Number(volumeKg).toLocaleString('pt-BR')} Kg` : '--'}
-          detail={
-            variacao_volume_kg != null
-            ? <span style={{ color: variacao_volume_kg >= 0 ? 'green' : 'red' }}>
-                {variacao_volume_kg >= 0 ? '+' : ''}{variacao_volume_kg.toFixed(1)}% vs mês anterior
-              </span>
+          detail={volumeKgAnterior != null && volumeKgAnterior > 0
+            ? `Mês anterior: ${Number(volumeKgAnterior).toLocaleString('pt-BR')} Kg`
             : "Sem dados do mês anterior"
           }
           />
         <MiniMetric
           title="Faturamento mensal"
           value={faturamentoLoading ? 'Carregando...' : faturamento != null ? `R$${Number(faturamento).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
-          detail={
-            variacao_faturamento != null
-            ? <span style={{ color: variacao_faturamento >= 0 ? 'green' : 'red' }}>
-                {variacao_faturamento >= 0 ? '+' : ''}{variacao_faturamento.toFixed(1)}% vs mês anterior
-              </span>
+          detail={faturamentoAnterior != null && faturamentoAnterior > 0
+            ? `Mês anterior: R$${Number(faturamentoAnterior).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
             : "Sem dados do mês anterior"
           }
-          />
+        />
         <MiniMetric
           title="Ticket Médio"
           value={ticketMedioLoading ? 'Carregando...' : ticketMedio != null ? `R$${Number(ticketMedio).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
-          detail={
-            varacao_ticket_medio != null
-            ? <span style={{ color: varacao_ticket_medio >= 0 ? 'green' : 'red' }}>
-                {varacao_ticket_medio >= 0 ? '+' : ''}{varacao_ticket_medio.toFixed(1)}% vs mês anterior
-              </span>
+          detail={ticketMedioAnterior != null && ticketMedioAnterior > 0
+            ? `Mês anterior: R$${Number(ticketMedioAnterior).toLocaleString('pt-BR',{minimumFractionDigits: 2, maximumFractionDigits: 2})}`
             : "Sem dados do mês anterior"
           }
         />
@@ -213,49 +231,35 @@ export function DashboardPage() {
             )}
           </div>
         </SectionCard>
+      </div>
 
-        <SectionCard title="Área reservada para gráficos" subtitle="Blocos prontos para conectar bibliotecas como Recharts ou ApexCharts.">
-          <div className="chartPlaceholder tall">
-            <div className="chartBars">
-              <span style={{ height: '42%' }} />
-              <span style={{ height: '65%' }} />
-              <span style={{ height: '58%' }} />
-              <span style={{ height: '84%' }} />
-              <span style={{ height: '76%' }} />
-              <span style={{ height: '92%' }} />
-              <span style={{ height: '70%' }} />
-            </div>
-            <div className="chartLegend">
-              <span>Jan</span>
-              <span>Fev</span>
-              <span>Mar</span>
-              <span>Abr</span>
-              <span>Mai</span>
-              <span>Jun</span>
-              <span>Jul</span>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="KPIs comparativos" subtitle="Bom para ranking, mix por categoria e metas mensais.">
-          <div className="summaryList">
-            <div className="summaryItem">
-              <span>Meta do mês</span>
-              <strong>82%</strong>
-            </div>
-            <div className="summaryItem">
-              <span>Categoria líder</span>
-              <strong>Frutas frescas</strong>
-            </div>
-            <div className="summaryItem">
-              <span>Melhor unidade</span>
-              <strong>CD Principal</strong>
-            </div>
-            <div className="summaryItem">
-              <span>Pior ruptura</span>
-              <strong>Loja Norte</strong>
-            </div>
-          </div>
+      <div>
+        <SectionCard title="Faturamento do ano" subtitle="Faturamento mensal consolidado do ano atual">
+          {faturamentoAnualLoading ? (
+            <p>Carregando...</p>
+          ) : (
+            <>
+              <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f97316" />
+                    <stop offset="100%" stopColor="#22c55e" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={dadosGrafico}>
+                  <XAxis dataKey="name" />
+                  <YAxis
+                    tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`}
+                    ticks={[5000, 10000, 15000, 20000]}
+                  />
+                  <Tooltip formatter={(v) => `R$${Number(v).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`} />
+                  <Bar dataKey="value" fill="url(#barGradient)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </>
+          )}
         </SectionCard>
       </div>
     </div>
