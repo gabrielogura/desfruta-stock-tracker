@@ -187,7 +187,7 @@ export function DashboardPage() {
           title="Faturamento mensal"
           value={faturamentoLoading ? 'Carregando...' : faturamento != null ? `R$${Number(faturamento).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
           detail={faturamentoAnterior != null && faturamentoAnterior > 0
-            ? `Mês anterior: R$${Number(faturamentoAnterior).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+            ? <>Mês anterior: R$${Number(faturamentoAnterior).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</>
             : "Sem dados do mês anterior"
           }
         />
