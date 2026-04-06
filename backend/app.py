@@ -231,7 +231,7 @@ def cadastrar_novo_produto():
         quantidade_kg = dados.get('quantidade_kg')
         disponivel = dados.get('disponivel')
         # Validação do campo disponivel, deve ser "Ativo" ou "Inativo", caso contrário, retorna erro
-        if disponivel.lowe() == "ativo":
+        if disponivel.lower() == "ativo":
             disponivel = 1
         elif disponivel.lower() == "inativo":
             disponivel = 0
@@ -564,7 +564,7 @@ def deletar_funcionario_db():
                 return jsonify({"status": "erro", "mensagem": "Campo 'username' é obrigatório para deletar funcionário"}), 400
             # Usuário é burro e vai tentar deletar a si mesmo
             if username_funcionario == username:
-                return jsonify({"status": "erro", "mensagem": " BURRO! Você não pode deletar a si mesmo!"}), 400
+                return jsonify({"status": "erro", "mensagem": "Você não pode deletar seu próprio usuário."}), 400
             deletar_funcionario(username_funcionario, password_funcionario)
             registrar_log(username, id_usuario, f"Deletou o funcionário {nome_usuario}")
             return jsonify({"status": "sucesso", "mensagem": "Funcionário deletado com sucesso!"}), 200

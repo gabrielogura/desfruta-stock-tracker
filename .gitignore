@@ -45,3 +45,6 @@ __pycache__/
 venv/
 env/
 .pytest_cache/
+
+# Variáveis de ambiente
+.env
