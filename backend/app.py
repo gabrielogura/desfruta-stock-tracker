@@ -454,6 +454,10 @@ def metricas_estoque():
 @jwt_required()
 def movimentacoes_estoque():
     try:
+        username = get_jwt_identity()
+        info_user = obter_info_usuario_por_username(username)
+        nome_usuario = info_user['nome']
+        id_usuario = info_user['user_id']
         dados = request.get_json()
         sabor = dados.get('sabor')
         quantidade_kg = dados.get('quantidade_kg')
@@ -465,6 +469,7 @@ def movimentacoes_estoque():
             return jsonify({'satus': 'erro', 'mensagem': 'Nao foi possível obter todas as informações'}), 400
         
         registrar_movimentacoes(sabor, quantidade_kg, validade, acao, tipo)
+        registrar_log(nome_usuario, id_usuario, f'{acao}  ·  {sabor}  ·  {quantidade_kg} Kg')
         return jsonify({'status': 'sucesso', 'mensagem': 'Movimentação registrada com sucesso!'}), 201
     
     except ValueError as ve:

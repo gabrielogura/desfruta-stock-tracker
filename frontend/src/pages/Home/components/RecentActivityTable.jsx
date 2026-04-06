@@ -67,7 +67,12 @@ export function RecentActivityTable() {
             <span>{item.nome_usuario ?? '—'}</span>
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {item.acao ?? '—'}
+                {(() => {
+                  const parts = item.acao?.split('·') ?? []
+                  const produto = parts[1]?.trim()
+                  const quantidade = parts[2]?.trim()
+                  return produto ? <><strong>{produto}</strong>{quantidade ? ` · ${quantidade}` : ''}</> : item.acao
+                })()}
               </span>
               <LogBadge acao={item.acao} />
             </span>

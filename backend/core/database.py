@@ -455,7 +455,7 @@ def obter_nome_produtos():
     try:
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT sabor FROM produtos_padrao')
+            cursor.execute('SELECT sabor FROM produtos_padrao ORDER BY sabor ASC')
             produtos = cursor.fetchall()
             return [produto[0] for produto in produtos]
     except Exception as e:
