@@ -20,9 +20,9 @@ export function MiniMetric({ title, value, detail }) {
   )
 }
 
-export function SectionCard({ title, subtitle, children, headerAction }) {
+export function SectionCard({ title, subtitle, children, headerAction, className, style }) {
   return (
-    <section className="panel sectionCard">
+    <section className={cx("panel sectionCard", className)} style={style}>
       <div className="panelHeader innerGap" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <h2 className="h2">{title}</h2>

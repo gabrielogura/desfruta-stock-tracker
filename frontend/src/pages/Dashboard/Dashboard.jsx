@@ -29,6 +29,9 @@ export function DashboardPage() {
   const [ticketMedioAnterior, setTicketMedioAnterior] = useState(null)
   const varacao_ticket_medio = ticketMedio != null && ticketMedioAnterior ? ((ticketMedio - ticketMedioAnterior) / ticketMedioAnterior) * 100 : null
 
+  const [top5ProdutosLoading, setTop5ProdutosLoading] = useState(true)
+  const [top5Produtos, setTop5Produtos] = useState(null)
+
   async function loadVolume(ignore) {
     setVolumeLoading(true)
     try {
@@ -149,6 +152,21 @@ export function DashboardPage() {
     }
   }
 
+  async function loadTop5Produtos(ignore) {
+    setTop5ProdutosLoading(true)
+    try{
+      const res = await api.get('/api/dashboard/top5-produtos')
+      if (ignore?.current) return
+      const data = res?.data ?? {}
+      setTop5Produtos(data?.dados ?? 0)
+    } catch {
+      if (ignore?.current) return
+      setTop5Produtos(null)
+    } finally {
+      if (!ignore?.current) setTop5ProdutosLoading(false)
+    }
+  }
+
   useEffect(() => {
     const ignore = { current: false }
     loadVolume(ignore)
@@ -161,6 +179,8 @@ export function DashboardPage() {
 
     loadTicketMedioAnterior(ignore)
     loadTicketMedio(ignore)
+
+    loadTop5Produtos(ignore)
     return () => { ignore.current = true }
   }, [])
 
@@ -202,8 +222,8 @@ export function DashboardPage() {
       </div>
 
       <div className="splitGrid twoColsTop">
-        <SectionCard title="Faturamento PF vs CNPJ" subtitle="Distribuição do faturamento por tipo de cliente no mês atual">
-          <div>
+        <SectionCard title="Faturamento PF vs CNPJ" subtitle="Distribuição do faturamento por tipo de cliente no mês atual" className="pizzaCard">
+          <div style={{ flex: 1 }}>
             {faturamentoPorTipoLoading ? (
               <p>Carregando...</p>
             ) : (
@@ -230,6 +250,23 @@ export function DashboardPage() {
               </ResponsiveContainer>
             )}
           </div>
+        </SectionCard>
+
+        <SectionCard title="Top 5 produtos do mês" subtitle="Produtos mais vendidos em Kg no mês atual">
+          {top5ProdutosLoading ? (
+            <p>Carregando...</p>
+          ) : !top5Produtos || top5Produtos.length === 0 ? (
+            <p>Sem vendas este mês.</p>
+          ) : (
+            <div className="summaryList">
+              {top5Produtos.map(([sabor, total], i) => (
+                <div className="summaryItem" key={sabor}>
+                  <span>{i + 1}. {sabor}</span>
+                  <strong>{Number(total).toLocaleString('pt-BR')} Kg</strong>
+                </div>
+              ))}
+            </div>
+          )}
         </SectionCard>
       </div>
 

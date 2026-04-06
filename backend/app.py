@@ -9,7 +9,7 @@ registrar_usuario, login_usuario, obter_logs, obter_info_usuario_por_username, v
 tabela_produtos, cadastrar_produto, deletar_produto, registrar_log, deletar_logs_totais, atualizar_ultimo_acesso, tabela_funcionarios,
 cadastro_funcionario, deletar_funcionario, atualizar_produto, verificar_produto_existe, obter_nome_produtos, registrar_movimentacoes,
 obter_metricas_estoque, obter_volume_vendido_mes, obter_faturamento_mes, obter_ticket_medio_mes, obter_volume_vendido_mes_anterior,
-obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamento_por_tipo_mes, obter_faturamento_anual
+obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamento_por_tipo_mes, obter_faturamento_anual, obter_top5_produtos_mes
 )
 
 # -------------------------
@@ -392,6 +392,17 @@ def ticket_medio():
 def ticket_medio_anterior():
     try:
         dados = obter_ticket_medio_mes_anterior()
+        return jsonify({"status": "sucesso", "dados": dados}), 200
+    except ValueError as ve:
+        return jsonify({"status": "erro", "mensagem": str(ve)}), 400
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)}), 500
+    
+@app.route('/api/dashboard/top5-produtos', methods=['GET'])
+@jwt_required()
+def top5_produtos():
+    try:
+        dados = obter_top5_produtos_mes()
         return jsonify({"status": "sucesso", "dados": dados}), 200
     except ValueError as ve:
         return jsonify({"status": "erro", "mensagem": str(ve)}), 400

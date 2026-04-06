@@ -620,6 +620,24 @@ def obter_faturamento_anual():
     except Exception as e:
         print(f'erro ao obter faturamento anual: {e}')
 
+def obter_top5_produtos_mes():
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT sabor, SUM(quantidade_kg) as total
+                FROM movimentacoes
+                WHERE acao = 'Venda'
+                AND strftime('%Y-%m', data) = strftime('%Y-%m', 'now', '-3 hours')
+                GROUP BY sabor
+                ORDER BY total DESC
+                LIMIT 5
+            """)
+            resultado = cursor.fetchall()
+            return resultado
+    except Exception as e:
+        print(f'erro ao obter top 5 produtos do mês: {e}')
+
 # --- Execução ---
 if __name__ == "__main__":
     inicializar_banco()
