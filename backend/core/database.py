@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 
 load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
 
-db_path = 'backend/data/desfrutastock.db'
+db_path = 'data/desfrutastock.db'
 senhadaporra = os.getenv("SENHA_MASTER")
 pass_jwt = generate_password_hash(senhadaporra) if senhadaporra else None
 
