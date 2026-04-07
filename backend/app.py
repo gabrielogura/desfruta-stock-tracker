@@ -86,7 +86,7 @@ def register():
         if not senha_register:
             return jsonify({"msg": "Senha de registro é obrigatória"}), 400
         # Verificar se a senha de registro é correta
-        if senha_register != os.getenv("MASTER_PASSWORD"):
+        if senha_register != os.getenv("SENHA_MASTER"):
             return jsonify({"msg": "Senha de registro incorreta"}), 403
         # Validar campos obrigatórios        
         if not all([nome, username, password, role, empresa]):

@@ -1,12 +1,12 @@
 import sqlite3
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, timedelta
 
-load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
+load_dotenv(find_dotenv())  # Carrega as variáveis de ambiente do arquivo .env
 
-db_path = 'data/desfrutastock.db'
+db_path = os.getenv("DB_PATH", "data/desfrutastock.db")
 senhadaporra = os.getenv("SENHA_MASTER")
 pass_jwt = generate_password_hash(senhadaporra) if senhadaporra else None
 
