@@ -16,7 +16,10 @@ obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamen
 # Configurações do Flask e JWT
 # -------------------------
 app = Flask(__name__)
-CORS(app, origins=["https://desfruta-stock-tracker.vercel.app"])
+CORS(app, origins=[
+    "https://desfruta-stock-tracker.vercel.app",
+    "http://localhost:5173"
+])
 load_dotenv()
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=8)

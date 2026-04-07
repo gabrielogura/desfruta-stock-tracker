@@ -27,6 +27,7 @@ dist-ssr
 *.zip
 
 #Ignore SQLlite's bank and Cache's
+*.db
 *scratch*.py
 *.pys
 *.pyc
