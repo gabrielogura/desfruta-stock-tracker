@@ -28,7 +28,7 @@ export function Sidebar({ visibleNav, activeKey, onNavigate, onLogout, userName,
             </div>
 
             <button
-              className="collapseBtn"
+              className="collapseBtn desktopOnly"
               onClick={onToggleCollapse}
               aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
               title={collapsed ? 'Expandir' : 'Recolher'}

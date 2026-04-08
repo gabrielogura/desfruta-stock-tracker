@@ -1453,7 +1453,15 @@ form {
   }
 }
 
+/* Elementos só visíveis no desktop */
+.desktopOnly {
+  display: flex;
+}
+
 @media (max-width: 860px) {
+  .desktopOnly {
+    display: none;
+  }
   /* Gaveta: sidebar sai da tela pela esquerda por padrão */
   .sidebar,
   .layout.isCollapsed .sidebar {

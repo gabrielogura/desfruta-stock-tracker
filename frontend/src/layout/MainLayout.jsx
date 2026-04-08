@@ -24,11 +24,14 @@ export function MainLayout({ onLogout, userName, userRole }) {
     }).catch(() => {})
   }, [])
 
-  // Fecha o menu mobile automaticamente ao voltar pro desktop
   useEffect(() => {
     function handleResize() {
       if (window.innerWidth > MOBILE_BREAKPOINT) {
+        // Voltou pro desktop: fecha gaveta
         setMobileOpen(false)
+      } else {
+        // Entrou no mobile: reseta collapsed pra não interferir no CSS
+        setCollapsed(false)
       }
     }
     window.addEventListener('resize', handleResize)
