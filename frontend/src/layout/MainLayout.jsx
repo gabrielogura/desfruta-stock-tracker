@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Menu } from 'lucide-react'
 import { cx } from '../utils/formatters'
 import { NAV, EMPLOYEES_ROLES } from '../constants/nav'
 import { Sidebar } from './Sidebar'
@@ -7,6 +8,7 @@ import api from '../api/axiosInstance'
 
 export function MainLayout({ onLogout, userName, userRole }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [active, setActive] = useState('home')
   const [userPhoto, setUserPhoto] = useState(null)
 
@@ -29,21 +31,38 @@ export function MainLayout({ onLogout, userName, userRole }) {
 
   const safeActive = visibleNav.find((item) => item.key === active) ? active : 'home'
 
+  function handleNavigate(key) {
+    setActive(key)
+    setMobileOpen(false)
+  }
+
   return (
     <div className={cx('layout', collapsed && 'isCollapsed')}>
       <Sidebar
         visibleNav={visibleNav}
         activeKey={safeActive}
-        onNavigate={setActive}
+        onNavigate={handleNavigate}
         onLogout={onLogout}
         userName={userName}
         userRole={userRole}
         userPhoto={userPhoto}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((v) => !v)}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
       />
 
       <main className="main">
+      <header className='mobileTopbar'>
+        <button
+          className='mobileMenuBtn'
+          onClick={() => setMobileOpen(true)}
+          aria-label='Abrir menu'
+        >
+          <Menu size={22} />
+        </button>
+      </header>
+      
         <PageContent activeKey={safeActive} userName={userName} userRole={userRole} />
       </main>
     </div>
