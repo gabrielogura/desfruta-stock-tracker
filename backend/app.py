@@ -20,6 +20,7 @@ CORS(app, origins=[
     "https://desfruta-stock-tracker.vercel.app",
     "https://desfruta.gabrielogura.com",
     "http://localhost:5173"
+    "http://192.168.137.1:5173"
 ])
 load_dotenv()
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")

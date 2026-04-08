@@ -6,6 +6,8 @@ import { Sidebar } from './Sidebar'
 import { PageContent } from './PageContent'
 import api from '../api/axiosInstance'
 
+const MOBILE_BREAKPOINT = 860
+
 export function MainLayout({ onLogout, userName, userRole }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -20,6 +22,17 @@ export function MainLayout({ onLogout, userName, userRole }) {
         data?.profile?.photo ?? data?.profile?.avatar ?? data?.user?.photo ?? data?.user?.avatar ?? null
       if (photo && typeof photo === 'string') setUserPhoto(photo)
     }).catch(() => {})
+  }, [])
+
+  // Fecha o menu mobile automaticamente ao voltar pro desktop
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth > MOBILE_BREAKPOINT) {
+        setMobileOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const canSeeEmployees = EMPLOYEES_ROLES.includes(userRole?.toLowerCase?.() || '')
@@ -53,16 +66,16 @@ export function MainLayout({ onLogout, userName, userRole }) {
       />
 
       <main className="main">
-      <header className='mobileTopbar'>
-        <button
-          className='mobileMenuBtn'
-          onClick={() => setMobileOpen(true)}
-          aria-label='Abrir menu'
-        >
-          <Menu size={22} />
-        </button>
-      </header>
-      
+        <header className="mobileTopbar">
+          <button
+            className="mobileMenuBtn"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Abrir menu"
+          >
+            <Menu size={22} />
+          </button>
+        </header>
+
         <PageContent activeKey={safeActive} userName={userName} userRole={userRole} />
       </main>
     </div>
