@@ -242,7 +242,7 @@ def cadastrar_novo_produto():
         else:
             return jsonify({"status": "erro", "mensagem": "Campo 'disponivel' deve ser 'Ativo' ou 'Inativo'"}), 400
         # Validação dos campos obrigatórios, se algum campo não for fornecido, retorna erro
-        if not all([sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel is not None]):
+        if not sabor or preco_pf is None or preco_cnpj is None or quantidade_kg is None or disponivel is None:
             return jsonify({"status": "erro", "mensagem": "Todos os campos são obrigatórios"}), 400
         cadastrar_produto(sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel)
         registrar_log(nome_usuario, id_usuario, f"Cadastrou o produto {sabor}")

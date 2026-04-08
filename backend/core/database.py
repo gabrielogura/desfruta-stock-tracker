@@ -179,7 +179,7 @@ def tabela_produtos():
                 quantidade_kg,
                 disponivel
             FROM produtos_padrao
-            ORDER BY sabor ASC
+            ORDER BY sabor COLLATE NOCASE ASC
         """)
 
         produtos = cursor.fetchall()

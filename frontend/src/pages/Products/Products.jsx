@@ -3,7 +3,7 @@ import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import api from '../../api/axiosInstance'
 import Toast from '../../components/Toast'
 import { MiniMetric, SectionCard } from '../../components/Cards'
-import { Field, SelectField } from '../../components/FormFields'
+import { Field } from '../../components/FormFields'
 import { extractApiMessage } from '../../utils/api'
 import { cx, normalizeTableRows, parseCurrencyInput } from '../../utils/formatters'
 import { ProductAtualizarModal, ProductCadastrarModal, ProductDeletarModal } from './components/ProductModals'
@@ -21,7 +21,7 @@ export function ProductsPage() {
   const [showDeletarConfirm, setShowDeletarConfirm] = useState(false)
   const [showAtualizarConfirm, setShowAtualizarConfirm] = useState(false)
   const [updating, setUpdating] = useState(false)
-  const [form, setForm] = useState({ nome: '', status: 'Ativo', precoPF: '', precoCNPJ: '', quantidade: '' })
+  const [form, setForm] = useState({ nome: '', precoPF: '', precoCNPJ: '', quantidade: '' })
 
   function notify(next) {
     setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
@@ -71,7 +71,7 @@ export function ProductsPage() {
   }
 
   function handleClear() {
-    setForm({ nome: '', status: 'Ativo', precoPF: '', precoCNPJ: '', quantidade: '' })
+    setForm({ nome: '', precoPF: '', precoCNPJ: '', quantidade: '' })
   }
 
   function handleCadastrarClick() {
@@ -92,10 +92,9 @@ export function ProductsPage() {
     const preco_pf = parseCurrencyInput(form.precoPF)
     const preco_cnpj = parseCurrencyInput(form.precoCNPJ)
     const quantidade_kg = parseCurrencyInput(form.quantidade)
-    const disponivel = form.status === 'Ativo'
     setSubmitting(true)
     try {
-      await api.post('/api/produtos/cadastrar', { sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel })
+      await api.post('/api/produtos/cadastrar', { sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel: 'Ativo' })
       notify({ type: 'success', title: 'Produto cadastrado', message: `${sabor} foi cadastrado com sucesso.` })
       handleClear()
       setShowCadastrarConfirm(false)
@@ -128,10 +127,9 @@ export function ProductsPage() {
     const preco_pf = parseCurrencyInput(form.precoPF)
     const preco_cnpj = parseCurrencyInput(form.precoCNPJ)
     const quantidade_kg = parseCurrencyInput(form.quantidade)
-    const disponivel = form.status === 'Ativo'
     setUpdating(true)
     try {
-      await api.put('/api/produtos/atualizar', { sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel })
+      await api.put('/api/produtos/atualizar', { sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel: 'Ativo' })
       notify({ type: 'success', title: 'Produto atualizado', message: `${sabor} foi atualizado com sucesso.` })
       handleClear()
       setShowAtualizarConfirm(false)
@@ -218,10 +216,9 @@ export function ProductsPage() {
       <SectionCard title="Cadastro Rápido" subtitle="Cadastro completo do produto, contendo todos os campos necessários.">
         <div className="filtersGrid">
           <Field label="Nome do Produto" placeholder="Nome do produto" value={form.nome} onChange={(v) => handleFormChange('nome', v)} />
-          <SelectField label="Status" value={form.status} onChange={(v) => handleFormChange('status', v)} options={['Ativo', 'Inativo']} placeholder={false} />
+          <Field label="Quantidade (Kg)" placeholder="18,70" type="text" value={form.quantidade} onChange={(v) => handleFormChange('quantidade', v)} />
           <Field label="Preço PF" placeholder="6,50" type="text" value={form.precoPF} onChange={(v) => handleFormChange('precoPF', v)} />
           <Field label="Preço CNPJ" placeholder="5,80" type="text" value={form.precoCNPJ} onChange={(v) => handleFormChange('precoCNPJ', v)} />
-          <Field label="Quantidade (Kg)" placeholder="18,70" type="text" value={form.quantidade} onChange={(v) => handleFormChange('quantidade', v)} />
         </div>
 
         <div className="sectionActions">
