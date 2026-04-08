@@ -3,6 +3,35 @@ import api from '../../../api/axiosInstance'
 import { SectionCard } from '../../../components/Cards'
 import { LogBadge } from './LogBadge'
 
+// Padrões do backend:
+// Estoque:    "adicionar  ·  Abacaxi  ·  10 Kg"
+// Produto:    "Cadastrou o produto Cacau"
+// Produto:    "Deletou o produto Cacau"
+// Produto:    "Atualizou o produto Cacau"
+// Funcionário: "Cadastrou o funcionário João"
+// Funcionário: "Deletou o funcionário João"
+function formatAcao(acao) {
+  if (!acao) return '—'
+
+  // Formato com · (estoque): "acao · Nome · 10 Kg"
+  if (acao.includes('·')) {
+    const parts = acao.split('·').map((p) => p.trim())
+    const nome = parts[1]
+    const quantidade = parts[2]
+    return nome
+      ? <><strong>{nome}</strong>{quantidade ? ` · ${quantidade}` : ''}</>
+      : acao
+  }
+
+  // Formato textual: "Verbo o produto Nome" ou "Verbo o funcionário Nome"
+  const match = acao.match(/^.+?\s+o\s+(?:produto|funcionário)\s+(.+)$/i)
+  if (match) {
+    return <strong style={{ textTransform: 'capitalize' }}>{match[1]}</strong>
+  }
+
+  return acao
+}
+
 export function RecentActivityTable() {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
@@ -67,12 +96,7 @@ export function RecentActivityTable() {
             <span>{item.nome_usuario ?? '—'}</span>
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {(() => {
-                  const parts = item.acao?.split('·') ?? []
-                  const produto = parts[1]?.trim()
-                  const quantidade = parts[2]?.trim()
-                  return produto ? <><strong>{produto}</strong>{quantidade ? ` · ${quantidade}` : ''}</> : item.acao
-                })()}
+                {formatAcao(item.acao)}
               </span>
               <LogBadge acao={item.acao} />
             </span>

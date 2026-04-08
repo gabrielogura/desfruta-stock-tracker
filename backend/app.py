@@ -266,7 +266,8 @@ def deletar_produtodb():
         if not sabor:
             return jsonify({"status": "erro", "mensagem": "Campo 'sabor' é obrigatório"}), 400
         deletar_produto(sabor)
-        registrar_log(nome_usuario, id_usuario, f"Deletou o produto {sabor}")
+        registrar_log(nome_usuario, id_usuario, f"Cadastrou  ·  {sabor}")
+        registrar_log(nome_usuario, id_usuario, f"Deletou  ·  {sabor}")
         return jsonify({"status": "sucesso", "mensagem": "Produto deletado com sucesso!"}), 200
     except ValueError as ve:
         return jsonify({"status": "erro", "mensagem": str(ve)}), 404
