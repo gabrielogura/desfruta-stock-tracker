@@ -1431,8 +1431,9 @@ form {
 
   .rowProducts,
   .rowStock,
-  .rowEmployees {
-    min-width: 860px;
+  .rowEmployees,
+  .rowActivity {
+    min-width: 600px;
   }
 }
 
@@ -1567,6 +1568,21 @@ form {
 
   .rowActivity {
     grid-template-columns: 140px 130px minmax(0, 1fr);
+  }
+
+  /* Tabela de produtos — scroll horizontal no mobile */
+  .productsTable {
+    overflow-x: auto;
+  }
+
+  /* Header do SectionCard empilha quando tem filtro/ação */
+  .panelHeader {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sectionHeaderAction {
+    align-self: flex-start;
   }
 }
 

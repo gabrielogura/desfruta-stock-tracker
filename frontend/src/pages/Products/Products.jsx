@@ -243,7 +243,7 @@ export function ProductsPage() {
 
       <SectionCard title="Tabela base de produtos" subtitle="Clique no ícone de lixeira para deletar um produto diretamente pela tabela.">
         <div className="table modernTable productsTable">
-          <div className="row head" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr' }}>
+          <div className="row head rowProducts">
             <span>Produto</span>
             <span>Preço PF</span>
             <span>Preço CNPJ</span>
@@ -262,9 +262,8 @@ export function ProductsPage() {
           ) : (
             rows.map((row) => (
               <div
-                className="row"
+                className="row rowProducts"
                 key={row._sabor || row.product}
-                style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', alignItems: 'center' }}
               >
                 <span>{row.product}</span>
                 <span>{row.pricePF}</span>
