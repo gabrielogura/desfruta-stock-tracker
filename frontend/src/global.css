@@ -1443,7 +1443,6 @@ form {
   }
 }
 
-/* Elementos exclusivos do mobile — ocultos por padrão */
 .sidebarOverlay {
   display: none;
 }
@@ -1460,7 +1459,6 @@ form {
   }
 }
 
-/* Elementos só visíveis no desktop */
 .desktopOnly {
   display: flex;
 }
@@ -1469,7 +1467,6 @@ form {
   .desktopOnly {
     display: none;
   }
-  /* Gaveta: sidebar sai da tela pela esquerda por padrão */
   .sidebar,
   .layout.isCollapsed .sidebar {
     position: fixed;
@@ -1483,21 +1480,18 @@ form {
     z-index: 40;
   }
 
-  /* Quando mobileOpen, a gaveta desliza pra dentro */
   .sidebar.mobileOpen {
     transform: translateX(0);
     transition: transform 280ms ease, visibility 0ms ease 0ms;
     visibility: visible;
   }
 
-  /* O conteúdo nunca tem margin no mobile */
   .main,
   .layout.isCollapsed .main {
     margin-left: 0;
     min-height: 100vh;
   }
 
-  /* Overlay: cobre tudo atrás da gaveta */
   .sidebarOverlay {
     display: block;
     position: fixed;
@@ -1514,7 +1508,6 @@ form {
     pointer-events: auto;
   }
 
-  /* Topbar com botão hamburguer */
   .mobileTopbar {
     display: flex;
     align-items: center;
@@ -1576,12 +1569,10 @@ form {
     grid-template-columns: 140px 130px minmax(0, 1fr);
   }
 
-  /* Tabela de produtos — scroll horizontal no mobile */
   .productsTable {
     overflow-x: auto;
   }
 
-  /* Header do SectionCard empilha quando tem filtro/ação */
   .panelHeader {
     flex-direction: column;
     gap: 12px;
@@ -1589,6 +1580,16 @@ form {
 
   .sectionHeaderAction {
     align-self: flex-start;
+  }
+
+  .logFilterBar {
+    flex-wrap: nowrap;
+  }
+
+  .logFilterBtn {
+    padding: 0 8px;
+    font-size: 11px;
+    white-space: nowrap;
   }
 }
 
@@ -1820,4 +1821,80 @@ form {
   text-align: center;
   font-size: 0.8125rem;
   color: var(--muted, #94a3b8);
+}
+
+.logDayGroup {
+  border-bottom: 1px solid var(--border);
+}
+
+.logDayGroup:last-child {
+  border-bottom: none;
+}
+
+.logDayHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(0, 128, 64, 0.04);
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 120ms ease;
+}
+
+.logDayHeader:hover {
+  background: rgba(0, 128, 64, 0.08);
+}
+
+.logDayLabel {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+  color: var(--green);
+  text-align: left;
+}
+
+.logDayDate {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.logDayCount {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.logFilterBar {
+  display: flex;
+  gap: 6px;
+}
+
+.logFilterBtn {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.logFilterBtn:hover {
+  background: rgba(0, 128, 64, 0.06);
+  color: var(--text);
+}
+
+.logFilterBtn.active {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
 }
