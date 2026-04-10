@@ -199,7 +199,7 @@ export function DashboardPage() {
           title="Volume vendido"
           value={volumeLoading ? 'Carregando...' : volumeKg != null ? `${Number(volumeKg).toLocaleString('pt-BR')} Kg` : '--'}
           detail={volumeKgAnterior != null && volumeKgAnterior > 0
-            ? `Mês anterior: ${Number(volumeKgAnterior).toLocaleString('pt-BR')} Kg`
+            ? <>Mês anterior: <strong style={{ color: '#f97316', fontSize: 'inherit'}}>{Number(volumeKgAnterior).toLocaleString('pt-BR')} Kg</strong></>
             : "Sem dados do mês anterior"
           }
           />
@@ -207,7 +207,7 @@ export function DashboardPage() {
           title="Faturamento mensal"
           value={faturamentoLoading ? 'Carregando...' : faturamento != null ? `R$${Number(faturamento).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
           detail={faturamentoAnterior != null && faturamentoAnterior > 0
-            ? <>Mês anterior: R$${Number(faturamentoAnterior).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</>
+            ? <>Mês anterior: <strong style={{ color: '#f97316', fontSize: 'inherit'}}>R${Number(faturamentoAnterior).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></>
             : "Sem dados do mês anterior"
           }
         />
@@ -215,7 +215,7 @@ export function DashboardPage() {
           title="Ticket Médio"
           value={ticketMedioLoading ? 'Carregando...' : ticketMedio != null ? `R$${Number(ticketMedio).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '--'}
           detail={ticketMedioAnterior != null && ticketMedioAnterior > 0
-            ? `Mês anterior: R$${Number(ticketMedioAnterior).toLocaleString('pt-BR',{minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+            ? <>Mês anterior: <strong style={{ color: '#f97316', fontSize: 'inherit'}}>R${Number(ticketMedioAnterior).toLocaleString('pt-BR',{minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></>
             : "Sem dados do mês anterior"
           }
         />

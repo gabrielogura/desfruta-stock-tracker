@@ -945,6 +945,12 @@ form {
   font-size: 13px;
 }
 
+.miniMetric p strong {
+  font-size: inherit;
+  font-weight: 700;
+  display: inline;
+}
+
 .splitGrid {
   display: grid;
   gap: 20px;

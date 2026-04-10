@@ -308,6 +308,7 @@ form {
   background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
   border-right: 1px solid var(--border);
   transition: width 220ms ease;
+  visibility: visible;
   z-index: 20;
 }
 
@@ -331,6 +332,11 @@ form {
   gap: 12px;
   overflow-y: auto;
   padding-right: 2px;
+  scrollbar-width: none;
+}
+
+.sidebarBody::-webkit-scrollbar {
+  display: none;
 }
 
 .brandRow {
@@ -416,28 +422,15 @@ form {
 }
 
 .sidebar.collapsed .brandRow {
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
 }
 
 .sidebar.collapsed .brand {
-  flex-direction: row;
-  justify-content: center;
-  padding: 10px;
-  width: 100%;
-}
-
-.sidebar.collapsed .brandText {
   display: none;
 }
 
 .sidebar.collapsed .collapseBtn {
   margin-left: 0;
-}
-
-.sidebar.collapsed .brandLogo {
-  width: 52px;
-  height: 52px;
 }
 
 .nav {
@@ -952,6 +945,12 @@ form {
   font-size: 13px;
 }
 
+.miniMetric p strong {
+  font-size: inherit;
+  font-weight: 700;
+  display: inline;
+}
+
 .splitGrid {
   display: grid;
   gap: 20px;
@@ -1438,8 +1437,9 @@ form {
 
   .rowProducts,
   .rowStock,
-  .rowEmployees {
-    min-width: 860px;
+  .rowEmployees,
+  .rowActivity {
+    min-width: 600px;
   }
 }
 
@@ -1452,7 +1452,23 @@ form {
   display: none;
 }
 
+@media (min-width: 861px) {
+  .sidebar {
+    transform: none !important;
+    visibility: visible !important;
+    transition: width 220ms ease !important;
+  }
+}
+
+/* Elementos só visíveis no desktop */
+.desktopOnly {
+  display: flex;
+}
+
 @media (max-width: 860px) {
+  .desktopOnly {
+    display: none;
+  }
   /* Gaveta: sidebar sai da tela pela esquerda por padrão */
   .sidebar,
   .layout.isCollapsed .sidebar {
@@ -1462,13 +1478,16 @@ form {
     bottom: 0;
     width: 290px;
     transform: translateX(-100%);
-    transition: transform 280ms ease;
+    transition: transform 280ms ease, visibility 0ms ease 280ms;
+    visibility: hidden;
     z-index: 40;
   }
 
   /* Quando mobileOpen, a gaveta desliza pra dentro */
   .sidebar.mobileOpen {
     transform: translateX(0);
+    transition: transform 280ms ease, visibility 0ms ease 0ms;
+    visibility: visible;
   }
 
   /* O conteúdo nunca tem margin no mobile */
@@ -1555,6 +1574,21 @@ form {
 
   .rowActivity {
     grid-template-columns: 140px 130px minmax(0, 1fr);
+  }
+
+  /* Tabela de produtos — scroll horizontal no mobile */
+  .productsTable {
+    overflow-x: auto;
+  }
+
+  /* Header do SectionCard empilha quando tem filtro/ação */
+  .panelHeader {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sectionHeaderAction {
+    align-self: flex-start;
   }
 }
 
