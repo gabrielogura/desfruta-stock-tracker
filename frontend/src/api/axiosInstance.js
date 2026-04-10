@@ -22,7 +22,7 @@ api.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('display_name')
       localStorage.removeItem('user_role')
-      window.location.href = '/'
+      window.dispatchEvent(new Event('auth:expired'))
     }
     return Promise.reject(error)
   }

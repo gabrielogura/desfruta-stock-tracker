@@ -20,9 +20,18 @@ export function App() {
       setDisplayName(name)
       setUserRole(role.toLowerCase())
     })
-
     return () => { ignore = true }
   }, [token])
+
+  useEffect (() => {
+    function handleExpired() {
+      setToken(null)
+      setDisplayName('Usuário do sistema')
+      setUserRole('')
+    }
+    window.addEventListener('auth:expired', handleExpired)
+    return () => window.removeEventListener('auth:expired', handleExpired)
+  }, [])
 
   if (token) {
     return (
