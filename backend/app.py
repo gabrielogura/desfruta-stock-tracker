@@ -9,7 +9,8 @@ registrar_usuario, login_usuario, obter_logs, obter_info_usuario_por_username, v
 tabela_produtos, cadastrar_produto, deletar_produto, registrar_log, deletar_logs_totais, atualizar_ultimo_acesso, tabela_funcionarios,
 cadastro_funcionario, deletar_funcionario, atualizar_produto, verificar_produto_existe, obter_nome_produtos, registrar_movimentacoes,
 obter_metricas_estoque, obter_volume_vendido_mes, obter_faturamento_mes, obter_ticket_medio_mes, obter_volume_vendido_mes_anterior,
-obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamento_por_tipo_mes, obter_faturamento_anual, obter_top5_produtos_mes
+obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamento_por_tipo_mes, obter_faturamento_anual, obter_top5_produtos_mes,
+inicializar_banco
 )
 
 # -------------------------
@@ -17,10 +18,9 @@ obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamen
 # -------------------------
 app = Flask(__name__)
 CORS(app, origins=[
-    "https://desfruta-stock-tracker.vercel.app",
-    "https://desfruta.gabrielogura.com",
     "http://localhost:5173",
     "http://192.168.137.1:5173"
+    #Adicionar o dominio da empresa
 ])
 load_dotenv()
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
@@ -599,4 +599,5 @@ def deletar_funcionario_db():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=True)
+    inicializar_banco()
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=False)
