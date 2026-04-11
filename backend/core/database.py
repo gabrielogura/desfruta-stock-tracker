@@ -123,11 +123,15 @@ def registrar_usuario(nome, username, password, role, empresa):
 
 # Função para autenticar usuário
 def login_usuario(username, password):
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.cursor()
-        cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
-        user = cursor.fetchone()
-        return user and check_password_hash(user[0], password)
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
+            user = cursor.fetchone()
+            return user and check_password_hash(user[0], password)
+    except Exception as e:
+        print(f"ERRO login_usuario: {e}", flush=True)
+        raise
     
 # Função Atualizar o último acesso do usuário
 def atualizar_ultimo_acesso(username):
