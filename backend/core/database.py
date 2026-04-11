@@ -86,7 +86,7 @@ def inicializar_banco():
         ]
 
         cursor.executemany(
-            "INSERT INTO produtos_padrao (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel) VALUES (%s, %s, %s, %s, %s)",
+            "INSERT INTO produtos_padrao (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel) VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
             produtos_padrao
         )
 
@@ -96,7 +96,7 @@ def inicializar_banco():
         ]
 
         cursor.executemany(
-            "INSERT INTO users (username, password, nome, role, empresa) VALUES (%s, %s, %s, %s, %s)",
+            "INSERT INTO users (username, password, nome, role, empresa) VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
             usuarios_padrao
         )
         conn.commit()
