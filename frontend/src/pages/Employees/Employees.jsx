@@ -209,7 +209,7 @@ export function EmployeesPage() {
           <Field label="Nome"    placeholder="Nome completo"   value={form.nome}     onChange={(v) => handleFormChange('nome', v)} />
           <Field label="Usuário" placeholder="Nome de usuário" value={form.username} onChange={(v) => handleFormChange('username', v)} />
           <PasswordField label="Senha" placeholder="Senha de acesso" value={form.password} onChange={(v) => handleFormChange('password', v)} />
-          <SelectField label="Cargo"   value={form.role}   onChange={(v) => handleFormChange('role', v)}   options={['Funcionário', 'Gerente']}    placeholder={false} />
+          <SelectField label="Cargo"   value={form.role}   onChange={(v) => handleFormChange('role', v)}   options={['Funcionário', 'Gerente', 'CEO']}    placeholder={false} />
           <SelectField label="Empresa" value={form.empresa} onChange={(v) => handleFormChange('empresa', v)} options={['Desfruta Polpas']}          placeholder={false} />
         </div>
 

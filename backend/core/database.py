@@ -91,8 +91,10 @@ def inicializar_banco():
         )
 
         usuarios_padrao = [
-            ("devallan", pass_jwt, "Allan Silva", "desenvolvedor", "Desfruta Polpas"),
-            ("devogura", pass_jwt, "Gabriel Ogura", "desenvolvedor", "Desfruta Polpas")
+            ("gabriel.dev", pass_jwt, "Gabriel Ogura", "desenvolvedor", "Desfruta Polpas")
+            ("eder.ceo", pass_jwt, "Éder Ogura", "CEO", "Desfruta Polpas")
+            ("ana.ceo", pass_jwt, "Ana Ogura", "CEO", "Desfruta Polpas")
+            ("thyago.ceo", pass_jwt, "Thyago Ogura", "CEO", "Desfruta Polpas")
         ]
 
         cursor.executemany(
