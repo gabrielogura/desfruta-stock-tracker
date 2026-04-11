@@ -280,7 +280,7 @@ def registrar_log(nome_usuario, user_id, acao):
 # Função para obter os logs
 def obter_logs():
     with get_conn() as conn:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictConnection)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT nome_usuario, acao, timestamp FROM logs ORDER BY timestamp DESC")
         logs = cursor.fetchall()
         return [dict(log) for log in logs]
@@ -312,7 +312,7 @@ def obter_metricas_funcionarios():
 # Função para obter a tabela completa de funcionários
 def tabela_funcionarios():
     with get_conn() as conn:
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictConnection)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT nome, username, role, empresa, ultimo_acesso FROM users ORDER BY nome ASC")
         funcionarios = cursor.fetchall()
         return [dict(funcionario) for funcionario in funcionarios]
