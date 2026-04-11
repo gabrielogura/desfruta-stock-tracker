@@ -69,6 +69,8 @@ def login():
         except ValueError as ve:
             return jsonify({"msg": str(ve)}), 400
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return jsonify({"msg": "Erro ao processar login", "error": str(e)}), 500
     # Tratamento de erros específicos para a requisição
     except ValueError as ve:
