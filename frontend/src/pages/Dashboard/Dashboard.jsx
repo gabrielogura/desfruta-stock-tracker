@@ -227,7 +227,7 @@ export function DashboardPage() {
             {faturamentoPorTipoLoading ? (
               <p>Carregando...</p>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={[
@@ -285,11 +285,20 @@ export function DashboardPage() {
                 </defs>
               </svg>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dadosGrafico}>
-                  <XAxis dataKey="name" />
+                <BarChart data={dadosGrafico} margin={{ left: 10, right: 10, bottom: 10 }}>
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 10 }}
+                    interval={0}
+                    angle={-45}
+                    textAnchor='end'
+                    height={45}
+                    />
                   <YAxis
                     tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`}
                     ticks={[5000, 10000, 15000, 20000]}
+                    width={50}
+                    tick={{ fontSize: 11 }}
                   />
                   <Tooltip formatter={(v) => `R$${Number(v).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`} />
                   <Bar dataKey="value" fill="url(#barGradient)" radius={[6, 6, 0, 0]} />

@@ -1591,6 +1591,10 @@ form {
     font-size: 11px;
     white-space: nowrap;
   }
+
+  .recharts-responsive-container {
+    min-height: 260px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1897,4 +1901,9 @@ form {
   background: var(--green);
   color: #fff;
   border-color: var(--green);
+}
+
+.recharts-wrapper,
+.recharts-surface {
+  outline: none !important;
 }
