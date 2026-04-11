@@ -17,8 +17,6 @@ obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamen
 # -------------------------
 app = Flask(__name__)
 CORS(app, origins=[
-    "https://desfruta-stock-tracker.vercel.app",
-    "https://desfruta.gabrielogura.com",
     "http://localhost:5173",
     "http://192.168.137.1:5173"
 ])
