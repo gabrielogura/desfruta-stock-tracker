@@ -19,8 +19,8 @@ inicializar_banco
 app = Flask(__name__)
 CORS(app, origins=[
     "http://localhost:5173",
-    "http://192.168.137.1:5173"
-    #Adicionar o dominio da empresa
+    "http://192.168.137.1:5173",
+    "https://estoque.akamarusabores.com.br"
 ])
 load_dotenv()
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
