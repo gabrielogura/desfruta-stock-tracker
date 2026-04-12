@@ -211,8 +211,9 @@ def atualizar_produto(sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel):
 # Função deletar um produto
 def deletar_produto(sabor):
     with get_conn() as conn: 
-        conn.execute('DELETE FROM produtos_padrao WHERE sabor = %s', (sabor,))
-        if conn.total_changes == 0:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM produtos_padrao WHERE sabor = %s', (sabor,))
+        if cursor.rowcount == 0:
             raise ValueError("Produto não encontrado para exclusão.")
         
 # Função para verificar se um produto existe
@@ -234,11 +235,11 @@ def registrar_movimentacoes(sabor, quantidade_kg, validade, acao, tipo):
 
                 if acao != 'Adicionar' and quantidade_kg > saldo_total:
                     raise ValueError(f'Saldo insuficiente. Saldo atual: {saldo_total} Kg')
-                conn.execute("INSERT INTO movimentacoes (sabor, quantidade_kg, validade, acao, data, tipo) VALUES (%s, %s, %s, %s, %s, %s)", (sabor, quantidade_kg, validade, acao, br_time, tipo))
+                cursor.execute("INSERT INTO movimentacoes (sabor, quantidade_kg, validade, acao, data, tipo) VALUES (%s, %s, %s, %s, %s, %s)", (sabor, quantidade_kg, validade, acao, br_time, tipo))
                 if acao == 'Adicionar':
-                    conn.execute("UPDATE produtos_padrao SET quantidade_kg = quantidade_kg + %s WHERE sabor = %s", (quantidade_kg, sabor))
+                    cursor.execute("UPDATE produtos_padrao SET quantidade_kg = quantidade_kg + %s WHERE sabor = %s", (quantidade_kg, sabor))
                 else:
-                    conn.execute("UPDATE produtos_padrao SET quantidade_kg = quantidade_kg - %s WHERE sabor = %s", (quantidade_kg, sabor))
+                    cursor.execute("UPDATE produtos_padrao SET quantidade_kg = quantidade_kg - %s WHERE sabor = %s", (quantidade_kg, sabor))
                 
                 cursor.execute("""
                     UPDATE produtos_padrao
@@ -257,10 +258,10 @@ def obter_metricas_estoque():
         cursor.execute("SELECT SUM(quantidade_kg) FROM produtos_padrao")
         saldo_total = cursor.fetchone()[0] or 0
 
-        cursor.execute("SELECT SUM(quantidade_kg) FROM movimentacoes WHERE acao = 'Adicionar' AND date(data) = date('now', '-3 hours')")
+        cursor.execute("SELECT SUM(quantidade_kg) FROM movimentacoes WHERE acao = 'Adicionar' AND date(data) = DATE(NOW() AT TIME ZONE 'America/Sao_Paulo')")
         entradas_hoje = cursor.fetchone()[0] or 0
 
-        cursor.execute("SELECT SUM(quantidade_kg) FROM movimentacoes WHERE acao IN ('Venda', 'Vencido', 'Retirar') AND date(data) = date('now', '-3 hours')")
+        cursor.execute("SELECT SUM(quantidade_kg) FROM movimentacoes WHERE acao IN ('Venda', 'Vencido', 'Retirar') AND date(data) = DATE(NOW() AT TIME ZONE 'America/Sao_Paulo')")
         saidas_hoje = cursor.fetchone()[0] or 0
 
         return {
@@ -274,7 +275,8 @@ def registrar_log(nome_usuario, user_id, acao):
     try:
         br_time = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d %H:%M:%S')
         with get_conn() as conn:
-            conn.execute('INSERT INTO logs (nome_usuario, user_id, acao, timestamp) VALUES (%s, %s, %s, %s)', 
+            cursor = conn.cursor()
+            cursor.execute('INSERT INTO logs (nome_usuario, user_id, acao, timestamp) VALUES (%s, %s, %s, %s)', 
                         (nome_usuario, user_id, acao, br_time))
     except Exception as e:
         print(f"Erro ao registrar log: {e}")
@@ -306,9 +308,15 @@ def deletar_logs_totais():
 def obter_metricas_funcionarios():
     with get_conn() as conn:
         cursor = conn.cursor()
-        total_funcionarios = cursor.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        total_cargos = cursor.execute("SELECT COUNT(DISTINCT role) FROM users").fetchone()[0]
-        funcionarios_ativos = cursor.execute("SELECT COUNT(*) FROM users WHERE ultimo_acesso >= datetime('now', '-1 days')").fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM users")
+        total_funcionarios = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(DISTINCT role) FROM users")
+        total_cargos = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM users WHERE ultimo_acesso >= NOW() - INTERVAL '1 day'")
+        funcionarios_ativos = cursor.fetchone()[0]
         return {"total_funcionarios": total_funcionarios, "total_cargos": total_cargos, "funcionarios_ativos": funcionarios_ativos}
     
 # Função para obter a tabela completa de funcionários
@@ -323,8 +331,9 @@ def tabela_funcionarios():
 def cadastro_funcionario(nome, username, password, role, empresa):
     try:
         with get_conn() as conn:
+            cursor = conn.cursor()
             pwd_hash = generate_password_hash(password)
-            conn.execute('INSERT INTO users (nome, username, password, role, empresa) VALUES (%s, %s, %s, %s, %s)', 
+            cursor.execute('INSERT INTO users (nome, username, password, role, empresa) VALUES (%s, %s, %s, %s, %s)', 
                         (nome, username, pwd_hash, role, empresa))
     except psycopg2.errors.UniqueViolation:
         raise ValueError("Username já existe. Escolha outro.")
@@ -361,7 +370,8 @@ def atualizar_quantidade_produto(sabor, validade, nova_quantidade):
                 raise ValueError(f"Sabor '{sabor}' não cadastrado na tabela padrão.")
             # 2. Atualiza ou Insere na tabela de LOTES (produtos)
             # Verifica se já existe esse sabor com essa validade
-            lote_existente = cursor.execute('SELECT quantidade_kg FROM produtos WHERE sabor = %s AND validade = %s', (sabor, validade)).fetchone()
+            cursor.execute('SELECT quantidade_kg FROM produtos WHERE sabor = %s AND validade = %s', (sabor, validade))
+            lote_existente = cursor.fetchone()
             if lote_existente:
                 # Se o lote já existe, soma à quantidade atual
                 cursor.execute('UPDATE produtos SET quantidade_kg = quantidade_kg + %s WHERE sabor = %s AND validade = %s', (nova_quantidade, sabor, validade))
@@ -383,7 +393,8 @@ def subtrair_quantidade_produto(sabor, validade, quantidade_subtrair):
         with get_conn() as conn:
             cursor = conn.cursor()
             # 1. Busca a quantidade do lote específico
-            res = cursor.execute('SELECT quantidade_kg FROM produtos WHERE sabor = %s AND validade = %s', (sabor, validade)).fetchone()
+            cursor.execute('SELECT quantidade_kg FROM produtos WHERE sabor = %s AND validade = %s', (sabor, validade))
+            res = cursor.fetchone()
             if res is None:
                 raise ValueError(f"Lote '{sabor}' com validade '{validade}' não encontrado.")
             qtd_lote_atual = res[0]
@@ -411,7 +422,8 @@ def vencimento_produto(sabor, validade):
         with get_conn() as conn:
             cursor = conn.cursor()
             # Busca a quantidade do lote específico
-            res = cursor.execute('SELECT quantidade_kg FROM produtos WHERE sabor = %s AND validade = %s', (sabor, validade)).fetchone()
+            cursor.execute('SELECT quantidade_kg FROM produtos WHERE sabor = %s AND validade = %s', (sabor, validade))
+            res = cursor.fetchone()
             if res is None:
                 raise ValueError(f"Lote '{sabor}' com validade '{validade}' não encontrado.")
             qtd_lote_atual = res[0]
