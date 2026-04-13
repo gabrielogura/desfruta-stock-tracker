@@ -1656,6 +1656,10 @@ form {
   .rowActivity {
     min-width: 680px;
   }
+  
+  .logDayGroup {
+    min-width: 678px;
+  }
 }
 
 @media (max-height: 700px) {
