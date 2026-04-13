@@ -1441,11 +1441,6 @@ form {
   .rowActivity {
     min-width: 600px;
   }
-
-  .logDayGroup,
-  .logDayHeader {
-    min-width: 600px;
-  }
 }
 
 .sidebarOverlay {
@@ -1834,7 +1829,6 @@ form {
 
 .logDayGroup {
   border-bottom: 1px solid var(--border);
-  width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -1845,7 +1839,6 @@ form {
 
 .logDayHeader {
   width: 100%;
-  align-self: stretch;
   box-sizing: border-box;
   display: flex;
   align-items: center;
