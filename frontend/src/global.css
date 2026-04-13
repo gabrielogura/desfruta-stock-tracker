@@ -1310,7 +1310,7 @@ form {
 }
 
 .rowActivity {
-  grid-template-columns: 175px 160px minmax(0, 1fr);
+  grid-template-columns: 175px 160px 265px;
 }
 
 .rowProducts {
