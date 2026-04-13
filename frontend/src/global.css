@@ -1832,6 +1832,8 @@ form {
   display: flex;
   flex-direction: column;
   min-width: 600px;
+  margin: 0;
+  padding: 0;
 }
 
 .logDayGroup:last-child {
