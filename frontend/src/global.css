@@ -1834,6 +1834,8 @@ form {
 
 .logDayGroup {
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
 }
 
 .logDayGroup:last-child {
