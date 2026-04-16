@@ -75,7 +75,7 @@ export function LoginPage({ onAuthed }) {
             type="text"
             name="user"
             id="user"
-            placeholder="username"
+            placeholder="demo"
             value={user}
             onChange={(e) => setUser(e.target.value)}
             autoComplete="username"
@@ -89,7 +89,7 @@ export function LoginPage({ onAuthed }) {
               type={showPassword ? 'text' : 'password'}
               name="password"
               id="password"
-              placeholder="password"
+              placeholder="demo123"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
