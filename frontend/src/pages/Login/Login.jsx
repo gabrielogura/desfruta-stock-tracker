@@ -116,9 +116,6 @@ export function LoginPage({ onAuthed }) {
           )}
         </button>
 
-        <div className="footer">
-          <a href="#">Esqueceu a Senha?</a>
-        </div>
       </form>
     </div>
   )
