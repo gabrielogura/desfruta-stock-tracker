@@ -63,4 +63,4 @@ export const DASHBOARD_SUMMARY = [
   { label: 'Margem estimada', value: '26%', note: 'Baseada em mix e custo médio' },
 ]
 
-export const EMPLOYEES_ROLES = ['gerente', 'desenvolvedor']
+export const EMPLOYEES_ROLES = ['gerente', 'desenvolvedor', 'ceo']

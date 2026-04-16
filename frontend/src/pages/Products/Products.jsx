@@ -22,6 +22,8 @@ export function ProductsPage() {
   const [showAtualizarConfirm, setShowAtualizarConfirm] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [form, setForm] = useState({ nome: '', precoPF: '', precoCNPJ: '', quantidade: '' })
+  const userRole = localStorage.getItem('user_role')
+  const canEdit = ['desenvolvedor', 'ceo', 'gerente'].includes(userRole?.toLowerCase())
 
   function notify(next) {
     setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
@@ -213,33 +215,35 @@ export function ProductsPage() {
         <MiniMetric title="Produtos Ativos"        value={metricAtivos}      detail="Produtos disponíveis para venda" />
       </div>
 
-      <SectionCard title="Cadastro Rápido" subtitle="Cadastro completo do produto, contendo todos os campos necessários.">
-        <div className="filtersGrid">
-          <Field label="Nome do Produto" placeholder="Nome do produto" value={form.nome} onChange={(v) => handleFormChange('nome', v)} />
-          <Field label="Quantidade (Kg)" placeholder="18,70" type="text" value={form.quantidade} onChange={(v) => handleFormChange('quantidade', v)} />
-          <Field label="Preço PF" placeholder="6,50" type="text" value={form.precoPF} onChange={(v) => handleFormChange('precoPF', v)} />
-          <Field label="Preço CNPJ" placeholder="5,80" type="text" value={form.precoCNPJ} onChange={(v) => handleFormChange('precoCNPJ', v)} />
-        </div>
+      {canEdit && (
+        <SectionCard title="Cadastro Rápido" subtitle="Cadastro completo do produto, contendo todos os campos necessários.">
+          <div className="filtersGrid">
+            <Field label="Nome do Produto" placeholder="Nome do produto" value={form.nome} onChange={(v) => handleFormChange('nome', v)} />
+            <Field label="Quantidade (Kg)" placeholder="18,70" type="text" value={form.quantidade} onChange={(v) => handleFormChange('quantidade', v)} />
+            <Field label="Preço PF" placeholder="6,50" type="text" value={form.precoPF} onChange={(v) => handleFormChange('precoPF', v)} />
+            <Field label="Preço CNPJ" placeholder="5,80" type="text" value={form.precoCNPJ} onChange={(v) => handleFormChange('precoCNPJ', v)} />
+          </div>
 
-        <div className="sectionActions">
-          <button className="btn" onClick={handleCadastrarClick} disabled={submitting || isDeleting || deleting || updating}>
-            <Plus size={15} />
-            {submitting ? 'Cadastrando...' : 'Novo produto'}
-          </button>
-          <button className="warningBtn" onClick={handleAtualizarClick} disabled={updating || submitting || isDeleting || deleting}>
-            <Pencil size={15} />
-            {updating ? 'Atualizando...' : 'Atualizar produto'}
-          </button>
-          <button className="dangerBtn" onClick={handleDeletarClick} disabled={isDeleting || submitting || deleting || updating}>
-            <Trash2 size={15} />
-            {deleting ? 'Deletando...' : 'Deletar produto'}
-          </button>
-          <button className="ghostBtn" onClick={handleClear} disabled={submitting || isDeleting || deleting}>
-            <X size={15} />
-            Limpar campos
-          </button>
-        </div>
-      </SectionCard>
+          <div className="sectionActions">
+            <button className="btn" onClick={handleCadastrarClick} disabled={submitting || isDeleting || deleting || updating}>
+              <Plus size={15} />
+              {submitting ? 'Cadastrando...' : 'Novo produto'}
+            </button>
+            <button className="warningBtn" onClick={handleAtualizarClick} disabled={updating || submitting || isDeleting || deleting}>
+              <Pencil size={15} />
+              {updating ? 'Atualizando...' : 'Atualizar produto'}
+            </button>
+            <button className="dangerBtn" onClick={handleDeletarClick} disabled={isDeleting || submitting || deleting || updating}>
+              <Trash2 size={15} />
+              {deleting ? 'Deletando...' : 'Deletar produto'}
+            </button>
+            <button className="ghostBtn" onClick={handleClear} disabled={submitting || isDeleting || deleting}>
+              <X size={15} />
+              Limpar campos
+            </button>
+          </div>
+        </SectionCard>
+      )}
 
       <SectionCard title="Tabela base de produtos" subtitle="Clique no ícone de lixeira para deletar um produto diretamente pela tabela.">
         <div className="table modernTable productsTable">

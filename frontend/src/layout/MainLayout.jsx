@@ -38,7 +38,7 @@ export function MainLayout({ onLogout, userName, userRole }) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const canSeeEmployees = EMPLOYEES_ROLES.includes(userRole?.toLowerCase?.() || '')
+  const canSeeEmployees = true
 
   const visibleNav = useMemo(
     () => NAV.filter((item) => item.key !== 'employees' || canSeeEmployees),

@@ -20,6 +20,9 @@ export function EmployeesPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const userRole = localStorage.getItem('user_role')
+  const canEdit = ['desenvolvedor', 'ceo', 'gerente'].includes(userRole?.toLowerCase())
+
 
   function notify(next) {
     setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
@@ -203,31 +206,32 @@ export function EmployeesPage() {
         <MiniMetric title="Funcionários Ativos"      value={val(metrics.ativos)} detail="Com acesso nas últimas 24h" />
         <MiniMetric title="Quantidade de Cargos"     value={val(metrics.cargos)} detail="Cargos distintos cadastrados" />
       </div>
+      {canEdit && (
+        <SectionCard title="Cadastro de funcionário" subtitle="Preencha os campos para registrar um novo funcionário no sistema.">
+          <div className="filtersGrid">
+            <Field label="Nome"    placeholder="Nome completo"   value={form.nome}     onChange={(v) => handleFormChange('nome', v)} />
+            <Field label="Usuário" placeholder="Nome de usuário" value={form.username} onChange={(v) => handleFormChange('username', v)} />
+            <PasswordField label="Senha" placeholder="Senha de acesso" value={form.password} onChange={(v) => handleFormChange('password', v)} />
+            <SelectField label="Cargo"   value={form.role}   onChange={(v) => handleFormChange('role', v)}   options={['Funcionário', 'Gerente', 'CEO']}    placeholder={false} />
+            <SelectField label="Empresa" value={form.empresa} onChange={(v) => handleFormChange('empresa', v)} options={['Desfruta Polpas']}          placeholder={false} />
+          </div>
 
-      <SectionCard title="Cadastro de funcionário" subtitle="Preencha os campos para registrar um novo funcionário no sistema.">
-        <div className="filtersGrid">
-          <Field label="Nome"    placeholder="Nome completo"   value={form.nome}     onChange={(v) => handleFormChange('nome', v)} />
-          <Field label="Usuário" placeholder="Nome de usuário" value={form.username} onChange={(v) => handleFormChange('username', v)} />
-          <PasswordField label="Senha" placeholder="Senha de acesso" value={form.password} onChange={(v) => handleFormChange('password', v)} />
-          <SelectField label="Cargo"   value={form.role}   onChange={(v) => handleFormChange('role', v)}   options={['Funcionário', 'Gerente', 'CEO']}    placeholder={false} />
-          <SelectField label="Empresa" value={form.empresa} onChange={(v) => handleFormChange('empresa', v)} options={['Desfruta Polpas']}          placeholder={false} />
-        </div>
-
-        <div className="sectionActions">
-          <button className="btn" onClick={handleCadastrarClick} disabled={submitting || deleting}>
-            <Plus size={15} />
-            Cadastrar funcionário
-          </button>
-          <button className="dangerBtn" onClick={handleDeletarClick} disabled={submitting || deleting}>
-            <Trash2 size={15} />
-            {deleting ? 'Deletando...' : 'Deletar funcionário'}
-          </button>
-          <button className="ghostBtn" onClick={handleClear} disabled={submitting || deleting}>
-            <X size={15} />
-            Limpar campos
-          </button>
-        </div>
-      </SectionCard>
+          <div className="sectionActions">
+            <button className="btn" onClick={handleCadastrarClick} disabled={submitting || deleting}>
+              <Plus size={15} />
+              Cadastrar funcionário
+            </button>
+            <button className="dangerBtn" onClick={handleDeletarClick} disabled={submitting || deleting}>
+              <Trash2 size={15} />
+              {deleting ? 'Deletando...' : 'Deletar funcionário'}
+            </button>
+            <button className="ghostBtn" onClick={handleClear} disabled={submitting || deleting}>
+              <X size={15} />
+              Limpar campos
+            </button>
+          </div>
+        </SectionCard>
+      )}
 
       <SectionCard title="Tabela de Funcionários" subtitle="Visualização completa dos funcionários cadastrados na plataforma.">
         <div className="table modernTable employeesTable">
