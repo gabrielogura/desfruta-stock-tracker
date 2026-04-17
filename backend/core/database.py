@@ -19,46 +19,46 @@ def inicializar_banco():
         cursor = conn.cursor()
 
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS produtos_padrao (
-            id SERIAL PRIMARY KEY,
-            sabor TEXT NOT NULL,
-            preco_pf REAL,
-            preco_cnpj REAL,
-            quantidade_kg REAL DEFAULT 0,
-            disponivel INTEGER DEFAULT 0
-        )
+            CREATE TABLE IF NOT EXISTS produtos_padrao (
+                id SERIAL PRIMARY KEY,
+                sabor TEXT NOT NULL,
+                preco_pf REAL,
+                preco_cnpj REAL,
+                quantidade_kg REAL DEFAULT 0,
+                disponivel INTEGER DEFAULT 0
+            )
         """)
 
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS produtos ( 
-            id SERIAL PRIMARY KEY,
-            sabor TEXT,
-            quantidade_kg REAL,
-            validade DATE
-        )
+            CREATE TABLE IF NOT EXISTS produtos ( 
+                id SERIAL PRIMARY KEY,
+                sabor TEXT,
+                quantidade_kg REAL,
+                validade DATE
+            )
         """)
 
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            user_id SERIAL PRIMARY KEY,
-            nome TEXT,
-            username TEXT UNIQUE,
-            password TEXT,
-            role TEXT,
-            empresa TEXT,
-            data_criacao TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo'),
-            ultimo_acesso TIMESTAMP
-        )
+            CREATE TABLE IF NOT EXISTS users (
+                user_id SERIAL PRIMARY KEY,
+                nome TEXT,
+                username TEXT UNIQUE,
+                password TEXT,
+                role TEXT,
+                empresa TEXT,
+                data_criacao TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo'),
+                ultimo_acesso TIMESTAMP
+            )
         """)
 
         cursor.execute("""
-        CREATE TABLE IF NOT EXISTS logs (
-            id SERIAL PRIMARY KEY,
-            nome_usuario TEXT,
-            user_id INTEGER,
-            acao TEXT,
-            timestamp TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo')
-        )
+            CREATE TABLE IF NOT EXISTS logs (
+                id SERIAL PRIMARY KEY,
+                nome_usuario TEXT,
+                user_id INTEGER,
+                acao TEXT,
+                timestamp TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo')
+            )
         """)
 
         cursor.execute("""
@@ -70,16 +70,47 @@ def inicializar_banco():
                 acao TEXT,
                 tipo TEXT,
                 data TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo')
-        )
+            )
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS produtos_1kg (
+                id SERIAL PRIMARY KEY,
+                sabor TEXT NOT NULL,
+                preco_pf REAL,
+                preco_cnpj REAL,
+                quantidade INTEGER DEFAULT 0,
+                disponivel INTEGER DEFAULT 0
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS movimentacoes_1kg (
+                id SERIAL PRIMARY KEY,
+                sabor TEXT,
+                quantidade INTEGER,
+                acao TEXT,
+                tipo TEXT,
+                data TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo')
+            )
+        """)
+
+        try:
+            cursor.execute("""
+                ALTER TABLE produtos_1kg
+                ADD CONSTRAINT produtos_1kg_sabor_unique UNIQUE (sabor)
+            """)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
         produtos_padrao = [
-            ("Abacaxi", 28.0, 23.0, 0, 0), ("Aba.Hortelã", 30.0, 25.0, 0, 0),
+            ("Abacaxi", 28.0, 23.0, 0, 0), ("Abacaxi.Hortelã", 30.0, 25.0, 0, 0),
             ("Açaí", 33.0, 30.0, 0, 0), ("Acerola", 28.0, 23.0, 0, 0),
-            ("Ace.Laranja", 30.0, 25.0, 0, 0), ("Amora", 33.0, 30.0, 0, 0),
+            ("Acerola.Laranja", 30.0, 25.0, 0, 0), ("Amora", 33.0, 30.0, 0, 0),
             ("Cajú", 28.0, 23.0, 0, 0), ("Cupuaçú", 33.0, 30.0, 0, 0),
             ("Goiaba", 28.0, 22.0, 0, 0), ("Graviola", 28.0, 25.0, 0, 0),
-            ("Mam.Laranja", 30.0, 24.0, 0, 0), ("Mamão", 28.0, 22.0, 0, 0),
+            ("Mamão.Laranja", 30.0, 24.0, 0, 0), ("Mamão", 28.0, 22.0, 0, 0),
             ("Maracujá", 41.0, 38.0, 0, 0), ("Manga", 28.0, 23.0, 0, 0),
             ("Morango", 28.0, 25.0, 0, 0), ("Uva", 33.0, 31.0, 0, 0),
             ("Uva.Morango", 31.0, 28.0, 0, 0)
@@ -88,6 +119,21 @@ def inicializar_banco():
         cursor.executemany(
             "INSERT INTO produtos_padrao (sabor, preco_pf, preco_cnpj, quantidade_kg, disponivel) VALUES (%s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
             produtos_padrao
+        )
+
+        produtos_1kg = [
+            ("Abacaxi (1kg)", 28.0, 23.0, 0, 0),
+            ("Acerola (1kg)", 28.0, 23.0, 0, 0),
+            ("Cajú (1kg)", 28.0, 23.0, 0, 0),
+            ("Goiaba (1kg)", 28.0, 22.0, 0, 0),
+            ("Manga (1kg)", 28.0, 23.0, 0, 0),
+            ("Maracujá (1kg)", 41.0, 38.0, 0, 0),
+            ("Morango (1kg)", 28.0, 25.0, 0, 0)
+        ]
+
+        cursor.executemany(
+            "INSERT INTO produtos_1kg (sabor, preco_pf, preco_cnpj, quantidade, disponivel) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (sabor) DO NOTHING",
+            produtos_1kg
         )
 
         usuarios_padrao = [
@@ -640,6 +686,55 @@ def obter_top5_produtos_mes():
             return resultado
     except Exception as e:
         print(f'erro ao obter top 5 produtos do mês: {e}')
+
+def tabela_produtos_1kg():
+    with get_conn() as conn:
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT id, sabor, preco_pf, preco_cnpj, quantidade, disponivel
+            FROM produtos_1kg
+            ORDER BY sabor
+        """)
+        produtos = cursor.fetchall()
+        return [dict(p) for p in produtos]
+    
+def registrar_movimentacoes_1kg(sabor, quantidade, acao, tipo):
+    try:
+        quantidade = int(quantidade)
+        br_time = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d %H:%M:%S')
+        with get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT quantidade FROM produtos_1kg WHERE sabor = %s', (sabor,))
+            saldo_atual = cursor.fetchone()[0] or 0
+            if acao != 'Adicionar' and quantidade > saldo_atual:
+                raise ValueError(f'Saldo insuficiente. Saldo atual: {saldo_atual}Kg')
+            
+            cursor.execute(
+                "INSERT INTO movimentacoes_1kg (sabor, quantidade, acao, tipo, data) VALUES (%s, %s, %s, %s, %s)",
+                (sabor, quantidade, acao, tipo, br_time)
+            )
+
+            if acao == 'Adicionar':
+                cursor.execute("UPDATE produtos_1kg SET quantidade = quantidade + %s WHERE sabor = %s", (quantidade, sabor))
+            else:
+                cursor.execute("UPDATE produtos_1kg SET quantidade = quantidade - %s WHERE sabor = %s", (quantidade, sabor))
+
+            cursor.execute("""
+                UPDATE produtos_1kg
+                SET disponivel = CASE WHEN quantidade > 0 THEN 1 ELSE 0 END
+                WHERE sabor = %s
+            """, (sabor,))
+
+    except Exception as e:
+        print(f'erro ao registrar movimentação 1kg: {e}')
+        raise
+
+def obter_produtos_1kg():
+    with get_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT sabor FROM produtos_1kg WHERE disponivel = 1 ORDER BY sabor")
+        rows = cursor.fetchall()
+        return [r[0] for r in rows]
 
 # --- Execução ---
 if __name__ == "__main__":
