@@ -328,6 +328,7 @@ function handleStockFormChange1kg(field, value) {
         <MiniMetric title="Saídas hoje"   value={mVal(metrics.saidas)}   detail="Pedidos e baixas operacionais" />
       </div>
 
+      {/* ── Movimentação normal ── */}
       <SectionCard title="Registrar Movimentação" subtitle="Selecione o produto, quantidade e o tipo de ação a ser registrada.">
         <div className="filtersGrid">
           <div className="field">
@@ -340,6 +341,43 @@ function handleStockFormChange1kg(field, value) {
             />
           </div>
 
+          <label className="field">
+            <span>Quantidade (Kg)</span>
+            <input type="text" placeholder="Ex: 50,00" value={stockForm.quantidade} onChange={(e) => handleStockFormChange('quantidade', e.target.value)} />
+          </label>
+
+          <SelectField
+            label="Ação"
+            value={stockForm.acao}
+            onChange={(v) => handleStockFormChange('acao', v)}
+            options={['Adicionar', 'Retirar', 'Venda', 'Vencido']}
+            placeholder="Selecionar ação..."
+          />
+
+          {stockForm.acao === 'Venda' && (
+            <SelectField
+              label="Tipo"
+              value={stockForm.tipo}
+              onChange={(v) => handleStockFormChange('tipo', v)}
+              options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
+              placeholder="Selecionar tipo..."
+            />
+          )}
+        </div>
+
+        <div className="sectionActions">
+          <button className="btn" onClick={handleStockSalvar}>
+            <Plus size={15} />
+            Salvar Alterações
+          </button>
+          <button className="ghostBtn" onClick={handleStockClear}>
+            <X size={15} />
+            Limpar Campos
+          </button>
+        </div>
+      </SectionCard>
+
+      {/* ── Movimentação 1kg ── */}
       <SectionCard title="Registrar Movimentação (1kg)" subtitle="Movimentações para produtos em embalagem de 1kg (unidades inteiras).">
         <div className="filtersGrid">
           <div className="field">
@@ -395,6 +433,7 @@ function handleStockFormChange1kg(field, value) {
         </div>
       </SectionCard>
 
+      {/* ── Tabela de Estoque (1kg) ── */}
       <SectionCard title="Tabela de Estoque (1kg)" subtitle="Produtos em embalagem de 1kg, quantidades em unidades.">
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
@@ -443,48 +482,11 @@ function handleStockFormChange1kg(field, value) {
         </div>
       </SectionCard>
 
-
-          <label className="field">
-            <span>Quantidade (Kg)</span>
-            <input type="text" placeholder="Ex: 50,00" value={stockForm.quantidade} onChange={(e) => handleStockFormChange('quantidade', e.target.value)} />
-          </label>
-
-          <SelectField
-            label="Ação"
-            value={stockForm.acao}
-            onChange={(v) => handleStockFormChange('acao', v)}
-            options={['Adicionar', 'Retirar', 'Venda', 'Vencido']}
-            placeholder="Selecionar ação..."
-          />
-
-        {stockForm.acao === 'Venda' && (
-          <SelectField
-            label="Tipo"
-            value={stockForm.tipo}
-            onChange={(v) => handleStockFormChange('tipo', v)}
-            options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
-            placeholder="Selecionar tipo..."
-          />
-        )}
-        </div>
-
-        <div className="sectionActions">
-          <button className="btn" onClick={handleStockSalvar}>
-            <Plus size={15} />
-            Salvar Alterações
-          </button>
-          <button className="ghostBtn" onClick={handleStockClear}>
-            <X size={15} />
-            Limpar Campos
-          </button>
-        </div>
-      </SectionCard>
-
+      {/* ── Tabela de Estoque normal ── */}
       <SectionCard title="Tabela de Estoque" subtitle="Visualização completa dos produtos em estoque, preços e disponibilidade." headerAction={tableFilterSelect}>
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
             <span>Produto</span>
-            {/* <span>Validade</span> */}
             <span>Preço PF</span>
             <span>Preço CNPJ</span>
             <span>Quantidade (Kg)</span>
@@ -517,7 +519,6 @@ function handleStockFormChange1kg(field, value) {
             return filtered.map((row) => (
               <div className="row rowStock" key={row.product}>
                 <span>{row.product}</span>
-                {/* <span>{formatValidade(row.validade)}</span> */}
                 <span>{row.precoPF   ?? '--'}</span>
                 <span>{row.precoCNPJ ?? '--'}</span>
                 <span>{row.quantity  ?? '--'}</span>
