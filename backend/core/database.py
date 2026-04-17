@@ -29,6 +29,15 @@ def inicializar_banco():
             )
         """)
 
+        try:
+            cursor.execute("""
+                ALTER TABLE produtos_padrao
+                ADD CONSTRAINT produtos_padrao_sabor_unique UNIQUE (sabor)
+            """)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS produtos ( 
                 id SERIAL PRIMARY KEY,
