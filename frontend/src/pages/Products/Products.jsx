@@ -12,6 +12,8 @@ import './Products.css'
 export function ProductsPage() {
   const [rows, setRows] = useState([])
   const [tableLoading, setTableLoading] = useState(true)
+  const [rows1kg, setRows1kg] = useState([])
+  const [tableLoading1kg, setTableLoading1kg] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -44,6 +46,21 @@ export function ProductsPage() {
     }
   }
 
+  async function loadTable1kg (ignore) {
+    setTableLoading1kg(true)
+    try {
+      const res = await api.get('/api/estoque/1kg/tabela')
+      if (ignore?.current) return
+      const data = res?.data?.dados ?? []
+      setRows1kg(Array.isArray(data) ? data : [])
+    } catch {
+      if (ignore?.current) return
+      setRows1kg([])
+    } finally {
+      if (!ignore?.current) setTableLoading1kg(false)
+    }
+  }
+
   async function loadMetrics(ignore) {
     try {
       const res = await api.get('/api/produtos/metricas')
@@ -65,6 +82,7 @@ export function ProductsPage() {
     const ignore = { current: false }
     loadTable(ignore)
     loadMetrics(ignore)
+    loadTable1kg(ignore)
     return () => { ignore.current = true }
   }, [])
 
@@ -275,6 +293,46 @@ export function ProductsPage() {
                 <span>{row.quantity}</span>
                 <span>
                   <span className={cx('pill', row.status === 'Ativo' ? 'ok' : 'mid')}>{row.status}</span>
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Tabela base de produtos 1kg" subtitle="Produtos em embalagem de 1kg — quantidades em unidades.">
+        <div className="table modernTable productsTable">
+          <div className="row head rowProducts">
+            <span>Produto</span>
+            <span>Preço PF</span>
+            <span>Preço CNPJ</span>
+            <span>Quantidade (Un)</span>
+            <span>Status</span>
+          </div>
+
+          {tableLoading1kg ? (
+            <div className="row" style={{ justifyContent: 'center', padding: '1.5rem', color: 'var(--text-muted, #888)' }}>
+              Carregando produtos...
+            </div>
+          ) : tableError1kg ? (
+            <div className="row" style={{ justifyContent: 'center', padding: '1.5rem', color: 'var(--red, #e55)' }}>
+              Não foi possível carregar os dados.
+            </div>
+          ) : rows1kg.length === 0 ? (
+            <div className="row" style={{ justifyContent: 'center', padding: '1.5rem', color: 'var(--text-muted, #888)' }}>
+              Nenhum produto cadastrado.
+            </div>
+          ) : (
+            rows1kg.map((row) => (
+              <div className="row rowProducts" key={row.sabor}>
+                <span>{row.sabor}</span>
+                <span>{row.preco_pf ?? '--'}</span>
+                <span>{row.preco_cnpj ?? '--'}</span>
+                <span>{row.quantidade != null ? `${row.quantidade} Un` : '--'}</span>
+                <span>
+                  <span className={cx('pill', row.disponivel === 1 ? 'ok' : 'mid')}>
+                    {row.disponivel === 1 ? 'Ativo' : 'Inativo'}
+                  </span>
                 </span>
               </div>
             ))

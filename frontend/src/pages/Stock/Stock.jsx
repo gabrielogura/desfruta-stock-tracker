@@ -86,62 +86,38 @@ export function StockPage() {
   const [tableLoading, setTableLoading] = useState(true)
   const [tableError, setTableError] = useState(false)
   const [metrics, setMetrics] = useState({ loading: true, error: false, saldo: null, entradas: null, saidas: null })
-  const [stockForm, setStockForm] = useState({ produto: '', validade: '', quantidade: '', acao: '', tipo: '' })
   const [productOptions, setProductOptions] = useState([])
   const [productsLoading, setProductsLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
-  const [stockForm1kg, setStockForm1kg] = useState({ produto: '', quantidade: '', acao: '', tipo: '' })
   const [products1kg, setProducts1kg] = useState([])
   const [products1kgLoading, setProducts1kgLoading] = useState(true)
   const [rows1kg, setRows1kg] = useState([])
   const [tableLoading1kg, setTableLoading1kg] = useState(true)
   const [tableError1kg, setTableError1kg] = useState(false)
-  const [submitting1kg, setSubmitting1kg] = useState(false)
+  const [pedidoForm, setPedidoForm] = useState({ cliente: '', tipo: '', categoria: 'kg' })
+  const [pedidoItens, setPedidoItens] = useState([{ sabor: '', quantidade: '' }])
+  const [submittingPedido, setSubmittingPedido] = useState(false)
 
-  function handleStockFormChange(field, value) {
-    setStockForm((prev) => ({ ...prev, [field]: value }))
+
+  function handlePedidoFormChange(field, value) {
+    setPedidoForm((prev) => ({ ...prev, [field]: value }))
   }
 
-  function handleStockClear() {
-    setStockForm({ produto: '', validade: '', quantidade: '', acao: '', tipo: '' })
+  function handleAddItem() {
+    setPedidoItens((prev) => [...prev, { sabor: '', quantidade: '' }])
   }
 
-function handleStockFormChange1kg(field, value) {
-    setStockForm1kg((prev) => ({ ...prev, [field]: value }))
+  function handleRemoveItem(index) {
+    setPedidoItens((prev) => prev.filter((_, i) => i !== index))
   }
 
-  function handleStockClear1kg() {
-    setStockForm1kg({ produto: '', quantidade: '', acao: '', tipo: '' })
+  function handleItemChange(index, field, value) {
+    setPedidoItens((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
   }
 
-  async function handleStockSalvar1kg() {
-    if (submitting1kg) return
-    const { produto, quantidade, acao, tipo } = stockForm1kg
-    if (!produto || !quantidade || !acao) {
-      notify({ type: 'error', title: 'Campos obrigatórios', message: 'Preencha todos os campos.' })
-      return
-    }
-    if (acao === 'Venda' && !tipo) {
-      notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o tipo (PF ou CNPJ) para registrar uma venda.' })
-      return
-    }
-    if (!Number.isInteger(Number(quantidade)) || Number(quantidade) <= 0) {
-      notify({ type: 'error', title: 'Quantidade inválida', message: 'Informe um número inteiro maior que zero.' })
-      return
-    }
-    setSubmitting1kg(true)
-    try {
-      await api.post('/api/estoque/1kg/movimentacoes', { sabor: produto, quantidade: Number(quantidade), acao, tipo })
-      notify({ type: 'success', title: 'Salvo', message: `${produto} registrado com sucesso.` })
-      handleStockClear1kg()
-      await loadTable1kg({ current: false })
-    } catch (err) {
-      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao salvar.'
-      notify({ type: 'error', title: 'Erro ao salvar', message: msg })
-    } finally {
-      setSubmitting1kg(false)
-    }
+  function handlePedidoClear() {
+    setPedidoForm({ cliente: '', tipo: '', categoria: 'kg' })
+    setPedidoItens([{ sabor: '', quantidade: '' }])
   }
 
   async function loadProducts1kg(ignore) {
@@ -180,29 +156,44 @@ function handleStockFormChange1kg(field, value) {
     setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
   }
 
-  async function handleStockSalvar() {
-    if (submitting) return
-      const produto = stockForm.produto
-      const quantidade_kg = stockForm.quantidade
-      const validade = stockForm.validade
-      const acao = stockForm.acao
-      const tipo = stockForm.tipo
-      if (acao === 'Venda' && !tipo) {
-        notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o tipo (PF ou CNPJ) para registrar uma venda.'})
-        return
-      }
-      setSubmitting(true)
+  async function handlePedidoSalvar() {
+    if (submittingPedido) return
+
+    const { cliente, tipo, categoria } = pedidoForm
+
+    if (!cliente.trim()) {
+      notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe o nome do cliente.' })
+      return
+    }
+    if (!tipo) {
+      notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o tipo (PF ou CNPJ).' })
+      return
+    }
+
+    const itensValidos = pedidoItens.filter((i) => i.sabor && i.quantidade)
+    if (itensValidos.length === 0) {
+      notify({ type: 'error', title: 'Pedido vazio', message: 'Adicione ao menos um produto com quantidade.' })
+      return
+    }
+
+    setSubmittingPedido(true)
     try {
-      await api.post('/api/estoque/movimentacoes', {sabor: produto, quantidade_kg, validade, acao, tipo})
-      notify({ type: 'success', title: 'Produto salvo', message: `${produto} foi salvo com sucesso.`})
-      handleStockClear()
+      await api.post('/api/pedidos', {
+        cliente: cliente.trim(),
+        tipo,
+        categoria,
+        itens: itensValidos.map((i) => ({ sabor: i.sabor, quantidade: Number(i.quantidade) })),
+      })
+      notify({ type: 'success', title: 'Pedido registrado', message: `Pedido de ${cliente.trim()} salvo com sucesso.` })
+      handlePedidoClear()
       await loadTable({ current: false })
+      await loadTable1kg({ current: false })
       await loadMetrics({ current: false })
     } catch (err) {
-      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao salvar produto.'
-      notify({type: 'error', title: 'Erro ao salvar', message: msg})
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao registrar pedido.'
+      notify({ type: 'error', title: 'Erro ao salvar', message: msg })
     } finally {
-      setSubmitting(false)
+      setSubmittingPedido(false)
     }
   }
 
@@ -328,105 +319,81 @@ function handleStockFormChange1kg(field, value) {
         <MiniMetric title="Saídas hoje"   value={mVal(metrics.saidas)}   detail="Pedidos e baixas operacionais" />
       </div>
 
-      {/* ── Movimentação normal ── */}
-      <SectionCard title="Registrar Movimentação" subtitle="Selecione o produto, quantidade e o tipo de ação a ser registrada.">
+      <SectionCard title="Registrar Pedido" subtitle="Preencha os dados do cliente e adicione os produtos do pedido.">
         <div className="filtersGrid">
-          <div className="field">
-            <span>Produto</span>
-            <ProductDropdown
-              value={stockForm.produto}
-              onChange={(v) => handleStockFormChange('produto', v)}
-              options={productOptions}
-              loading={productsLoading}
-            />
-          </div>
-
           <label className="field">
-            <span>Quantidade (Kg)</span>
-            <input type="text" placeholder="Ex: 50,00" value={stockForm.quantidade} onChange={(e) => handleStockFormChange('quantidade', e.target.value)} />
-          </label>
-
-          <SelectField
-            label="Ação"
-            value={stockForm.acao}
-            onChange={(v) => handleStockFormChange('acao', v)}
-            options={['Adicionar', 'Retirar', 'Venda', 'Vencido']}
-            placeholder="Selecionar ação..."
-          />
-
-          {stockForm.acao === 'Venda' && (
-            <SelectField
-              label="Tipo"
-              value={stockForm.tipo}
-              onChange={(v) => handleStockFormChange('tipo', v)}
-              options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
-              placeholder="Selecionar tipo..."
-            />
-          )}
-        </div>
-
-        <div className="sectionActions">
-          <button className="btn" onClick={handleStockSalvar}>
-            <Plus size={15} />
-            Salvar Alterações
-          </button>
-          <button className="ghostBtn" onClick={handleStockClear}>
-            <X size={15} />
-            Limpar Campos
-          </button>
-        </div>
-      </SectionCard>
-
-      {/* ── Movimentação 1kg ── */}
-      <SectionCard title="Registrar Movimentação (1kg)" subtitle="Movimentações para produtos em embalagem de 1kg (unidades inteiras).">
-        <div className="filtersGrid">
-          <div className="field">
-            <span>Produto</span>
-            <ProductDropdown
-              value={stockForm1kg.produto}
-              onChange={(v) => handleStockFormChange1kg('produto', v)}
-              options={products1kg}
-              loading={products1kgLoading}
-            />
-          </div>
-
-          <label className="field">
-            <span>Quantidade (Kg)</span>
+            <span>Cliente</span>
             <input
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Ex: 10"
-              value={stockForm1kg.quantidade}
-              onChange={(e) => handleStockFormChange1kg('quantidade', e.target.value)}
+              type="text"
+              placeholder="Nome do cliente"
+              value={pedidoForm.cliente}
+              onChange={(e) => handlePedidoFormChange('cliente', e.target.value)}
             />
           </label>
 
           <SelectField
-            label="Ação"
-            value={stockForm1kg.acao}
-            onChange={(v) => handleStockFormChange1kg('acao', v)}
-            options={['Adicionar', 'Retirar', 'Venda', 'Vencido']}
-            placeholder="Selecionar ação..."
+            label="Tipo"
+            value={pedidoForm.tipo}
+            onChange={(v) => handlePedidoFormChange('tipo', v)}
+            options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
+            placeholder="Selecionar tipo..."
           />
 
-          {stockForm1kg.acao === 'Venda' && (
-            <SelectField
-              label="Tipo"
-              value={stockForm1kg.tipo}
-              onChange={(v) => handleStockFormChange1kg('tipo', v)}
-              options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
-              placeholder="Selecionar tipo..."
-            />
-          )}
+          <SelectField
+            label="Categoria"
+            value={pedidoForm.categoria}
+            onChange={(v) => handlePedidoFormChange('categoria', v)}
+            options={['kg', '1kg']}
+            placeholder="Selecionar categoria..."
+          />
         </div>
 
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {pedidoItens.map((item, index) => (
+            <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 10, alignItems: 'end' }}>
+              <div className="field">
+                {index === 0 && <span>Produto</span>}
+                <ProductDropdown
+                  value={item.sabor}
+                  onChange={(v) => handleItemChange(index, 'sabor', v)}
+                  options={productOptions}
+                  loading={productsLoading}
+                />
+              </div>
+              <label className="field">
+                {index === 0 && <span>Quantidade</span>}
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Ex: 10"
+                  value={item.quantidade}
+                  onChange={(e) => handleItemChange(index, 'quantidade', e.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="dangerBtn"
+                style={{ height: 50, width: 36, padding: 0, justifyContent: 'center', alignSelf: 'end' }}
+                onClick={() => handleRemoveItem(index)}
+                disabled={pedidoItens.length === 1}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button type="button" className="ghostBtn" style={{ width: '100%', justifyContent: 'center' }} onClick={handleAddItem}>
+          <Plus size={15} />
+          Adicionar produto
+        </button>
+
         <div className="sectionActions">
-          <button className="btn" onClick={handleStockSalvar1kg}>
+          <button className="btn" onClick={handlePedidoSalvar} disabled={submittingPedido}>
             <Plus size={15} />
-            Salvar Alterações
+            {submittingPedido ? 'Salvando...' : 'Salvar Pedido'}
           </button>
-          <button className="ghostBtn" onClick={handleStockClear1kg}>
+          <button className="ghostBtn" onClick={handlePedidoClear}>
             <X size={15} />
             Limpar Campos
           </button>

@@ -531,7 +531,52 @@ def movimentacoes_1kg():
         return jsonify({'status': 'erro', 'mensagem': str(ve)}), 400
     except Exception as e:
         return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+    
+# -------------------------
+# API Pedidos
+# -------------------------
+@app.route('/api/pedidos', methods=['POST'])
+@jwt_required()
+def registrar_pedido():
+    try:
+        username = get_jwt_identity()
+        info_user = obter_info_usuario_por_username(username)
+        nome_usuario = info_user['nome']
+        id_usuario = info_user['user_id']
 
+        dados = request.get_json()
+        cliente = dados.get('cliente', '').strip()
+        tipo = dados.get('tipo')
+        categoria = dados.get('categoria', 'kg')
+        itens = dados.get('itens', [])
+
+        if not cliente:
+            return jsonify({'status': 'erro', 'mensagem': 'Nome do cliente é obrigatório.'}), 400
+        if not tipo:
+            return jsonify({'status': 'erro', 'mensagem': 'Tipo (PF ou CNPJ) é obrigatório.'}), 400
+        if not itens or len(itens) == 0:
+            return jsonify({'status': 'erro', 'mensagem': 'O pedido deve ter ao menos um item.'}), 400
+        
+        for item in itens:
+            sabor = item.get('sabor')
+            quantidade = item.get('quantidade')
+            if not sabor or not quantidade:
+                return jsonify({'status': 'erro', 'mensagem': f'Item inválido: sabor e quantidade são obrigatórios.'}), 400
+            
+            if categoria == '1kg':
+                registrar_movimentacoes_1kg(sabor, quantidade, 'Venda', tipo)
+            else:
+                registrar_movimentacoes(sabor, quantidade, None, 'Venda', tipo)
+
+        sabores = ', '.join([item.get('sabor', '') for item in itens])
+        registrar_log(nome_usuario, id_usuario, f'Venda  ·  {cliente}  ·  {sabores}')
+
+        return jsonify({'status': 'sucesso', 'mensagem': 'Pedido registrado com sucesso!'}), 201
+    
+    except ValueError as ve:
+        return jsonify({'status': 'erro', 'mensagem': str(ve)}), 400
+    except Exception as e:
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
 # -------------------------
 # APIs Funcionários
 # -------------------------
