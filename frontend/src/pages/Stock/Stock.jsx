@@ -400,55 +400,6 @@ export function StockPage() {
         </div>
       </SectionCard>
 
-      {/* ── Tabela de Estoque (1kg) ── */}
-      <SectionCard title="Tabela de Estoque (1kg)" subtitle="Produtos em embalagem de 1kg, quantidades em unidades.">
-        <div className="table modernTable stockTable">
-          <div className="row head rowStock">
-            <span>Produto</span>
-            <span>Preço PF</span>
-            <span>Preço CNPJ</span>
-            <span>Quantidade (Kg)</span>
-            <span>Status</span>
-          </div>
-
-          {tableLoading1kg && (
-            <div className="row rowStock">
-              <span style={{ gridColumn: '1 / -1', opacity: 0.5, padding: '4px 0' }}>Carregando estoque...</span>
-            </div>
-          )}
-
-          {!tableLoading1kg && tableError1kg && (
-            <div className="row rowStock">
-              <span style={{ gridColumn: '1 / -1', color: 'var(--red, #e55)', padding: '4px 0' }}>
-                Não foi possível carregar os dados do estoque.
-              </span>
-            </div>
-          )}
-
-          {!tableLoading1kg && !tableError1kg && (
-            rows1kg.length === 0
-              ? (
-                <div className="row rowStock">
-                  <span style={{ gridColumn: '1 / -1', opacity: 0.5, padding: '4px 0' }}>Nenhum produto disponível.</span>
-                </div>
-              )
-              : rows1kg.map((row) => (
-                <div className="row rowStock" key={row.sabor}>
-                  <span>{row.sabor}</span>
-                  <span>{row.preco_pf ?? '--'}</span>
-                  <span>{row.preco_cnpj ?? '--'}</span>
-                  <span>{row.quantidade != null ? `${row.quantidade} Kg` : '--'}</span>
-                  <span>
-                    <span className={cx('pill', row.disponivel === 1 ? 'ok' : 'bad')}>
-                      {row.disponivel === 1 ? 'Disponível' : 'Indisponível'}
-                    </span>
-                  </span>
-                </div>
-              ))
-          )}
-        </div>
-      </SectionCard>
-
       {/* ── Tabela de Estoque normal ── */}
       <SectionCard title="Tabela de Estoque" subtitle="Visualização completa dos produtos em estoque, preços e disponibilidade." headerAction={tableFilterSelect}>
         <div className="table modernTable stockTable">
