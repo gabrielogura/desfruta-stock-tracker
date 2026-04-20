@@ -26,6 +26,7 @@ export function ProductsPage() {
   const [form, setForm] = useState({ nome: '', precoPF: '', precoCNPJ: '', quantidade: '' })
   const userRole = localStorage.getItem('user_role')
   const canEdit = ['desenvolvedor', 'ceo', 'gerente'].includes(userRole?.toLowerCase())
+  const [tableError1kg, setTableError1kg] = useState(false)
 
   function notify(next) {
     setToast({ id: globalThis.crypto?.randomUUID?.() || String(Date.now()), ...next })
@@ -55,6 +56,7 @@ export function ProductsPage() {
       setRows1kg(Array.isArray(data) ? data : [])
     } catch {
       if (ignore?.current) return
+      setTableError1kg(true)
       setRows1kg([])
     } finally {
       if (!ignore?.current) setTableLoading1kg(false)
