@@ -98,7 +98,7 @@ export function StockPage() {
   const [pedidoItens, setPedidoItens] = useState([{ sabor: '', quantidade: '' }])
   const [submittingPedido, setSubmittingPedido] = useState(false)
 
-  const [movForm, setMovForm] = useState({ sabor: '', quantidade_kg: '', validade: '', acao: '', tipo: '' })
+  const [movForm, setMovForm] = useState({ sabor: '', quantidade_kg: '', acao: '', tipo: '' })
   const [submittingMov, setSubmittingMov] = useState(false)
 
   function handleMovChange(field, value) {
@@ -106,7 +106,7 @@ export function StockPage() {
   }
 
   function handleMovClear() {
-    setMovForm({ sabor: '', quantidade_kg: '', validade: '', acao: '', tipo: '' })
+    setMovForm({ sabor: '', quantidade_kg: '', acao: '', tipo: '' })
   }
 
   async function handleMovSalvar() {
@@ -122,7 +122,6 @@ export function StockPage() {
       await api.post('/api/estoque/movimentacoes', {
         sabor,
         quantidade_kg: Number(quantidade_kg),
-        validade: movForm.validade || null,
         acao,
         tipo: movForm.tipo || null,
       })
@@ -381,15 +380,6 @@ export function StockPage() {
               placeholder="Ex: 10"
               value={movForm.quantidade_kg}
               onChange={(e) => handleMovChange('quantidade_kg', e.target.value)}
-            />
-          </label>
-
-          <label className="field">
-            <span>Validade</span>
-            <input
-              type="date"
-              value={movForm.validade}
-              onChange={(e) => handleMovChange('validade', e.target.value)}
             />
           </label>
 
