@@ -45,10 +45,7 @@ function formatTimestamp(ts) {
   if (!ts) return '—'
   const d = new Date(ts)
   if (isNaN(d)) return ts
-  return d.toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function formatDayLabel(dateKey) {
@@ -156,7 +153,9 @@ function DayGroup({ dateKey, logs }) {
               <strong style={{ fontSize: 15 }}>Pedido — {pedidoModal.cliente}</strong>
               <button className="ghostBtn" style={{ padding: '2px 8px' }} onClick={() => setPedidoModal(null)}>✕</button>
             </div>
-            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>{pedidoModal.tipo} · {pedidoModal.data}</p>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
+              {pedidoModal.tipo} · {pedidoModal.data ? new Date(pedidoModal.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—'}
+            </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 80px', gap: '6px 16px', fontSize: 13 }}>
               <span style={{ opacity: 0.5, fontWeight: 600 }}>Sabor</span>
               <span style={{ opacity: 0.5, fontWeight: 600 }}>Qtd</span>
