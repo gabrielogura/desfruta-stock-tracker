@@ -387,19 +387,10 @@ export function StockPage() {
             label="Ação"
             value={movForm.acao}
             onChange={(v) => handleMovChange('acao', v)}
-            options={['Adicionar', 'Venda', 'Retirar', 'Vencido']}
+            options={['Adicionar', 'Retirar']}
             placeholder="Selecionar ação..."
           />
 
-          {movForm.acao === 'Venda' && (
-            <SelectField
-              label="Tipo"
-              value={movForm.tipo}
-              onChange={(v) => handleMovChange('tipo', v)}
-              options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
-              placeholder="Selecionar tipo..."
-            />
-          )}
         </div>
 
         <div className="sectionActions">
