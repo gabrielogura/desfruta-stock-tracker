@@ -149,14 +149,14 @@ function DayGroup({ dateKey, logs }) {
           onClick={() => setPedidoModal(null)}
         >
           <div
-            style={{ background: 'var(--card)', borderRadius: 14, padding: 24, minWidth: 360, maxWidth: 500, width: '90%' }}
+            style={{ background: '#ffffff', color: '#1a1a1a', borderRadius: 14, padding: 24, minWidth: 360, maxWidth: 500, width: '90%' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <strong style={{ fontSize: 15 }}>Pedido — {pedidoModal.cliente}</strong>
               <button className="ghostBtn" style={{ padding: '2px 8px' }} onClick={() => setPedidoModal(null)}>✕</button>
             </div>
-            <p style={{ fontSize: 13, opacity: 0.6, marginBottom: 16 }}>{pedidoModal.tipo} · {pedidoModal.data}</p>
+            <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>{pedidoModal.tipo} · {pedidoModal.data}</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 80px', gap: '6px 16px', fontSize: 13 }}>
               <span style={{ opacity: 0.5, fontWeight: 600 }}>Sabor</span>
               <span style={{ opacity: 0.5, fontWeight: 600 }}>Qtd</span>
