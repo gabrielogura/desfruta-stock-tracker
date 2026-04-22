@@ -77,6 +77,18 @@ function filterByDays(logs, days) {
   return logs.filter((log) => new Date(log.timestamp) >= cutoff)
 }
 
+function groupByDay(logs) {
+  const groups = {}
+  for (const log of logs) {
+    const d = new Date(log.timestamp)
+    if (isNaN(d)) continue
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    if (!groups[key]) groups[key] = []
+    groups[key].push(log)
+  }
+  return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
+}
+
 function DayGroup({ dateKey, logs }) {
   const [open, setOpen] = useState(true)
   const label = formatDayLabel(dateKey)
