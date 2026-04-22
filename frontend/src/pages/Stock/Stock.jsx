@@ -436,7 +436,7 @@ export function StockPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {pedidoItens.map((item, index) => (
-            <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 36px', gap: 10, alignItems: 'end' }}>
+            <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 36px', gap: 8, alignItems: 'end' }}>
               <div className="field">
                 {index === 0 && <span>Produto</span>}
                 <ProductDropdown
