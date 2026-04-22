@@ -183,7 +183,7 @@ def atualizar_ultimo_acesso(username):
     try:
         conn = get_conn()
         cursor = conn.cursor()
-        br_time = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d %H:%M:%S')
+        br_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute("UPDATE users SET ultimo_acesso = %s WHERE username = %s", (br_time, username))
         conn.commit()
     except psycopg2.Error as e:
@@ -280,7 +280,7 @@ def verificar_produto_existe(sabor):
 def registrar_movimentacoes(sabor, quantidade_kg, validade, acao, tipo):
         try:
             quantidade_kg = float(str(quantidade_kg).replace(',', '.'))
-            br_time = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d %H:%M:%S')
+            br_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             with get_conn() as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT quantidade_kg FROM produtos_padrao WHERE sabor = %s', (sabor,))
@@ -326,7 +326,7 @@ def obter_metricas_estoque():
 # Função para registrar uma ação no log
 def registrar_log(nome_usuario, user_id, acao):
     try:
-        br_time = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d %H:%M:%S')
+        br_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         with get_conn() as conn:
             cursor = conn.cursor()
             cursor.execute('INSERT INTO logs (nome_usuario, user_id, acao, timestamp) VALUES (%s, %s, %s, %s)', 
@@ -710,7 +710,7 @@ def tabela_produtos_1kg():
 def registrar_movimentacoes_1kg(sabor, quantidade, acao, tipo):
     try:
         quantidade = int(quantidade)
-        br_time = datetime.now(timezone(timedelta(hours=-3))).strftime('%Y-%m-%d %H:%M:%S')
+        br_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         with get_conn() as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT quantidade FROM produtos_1kg WHERE sabor = %s', (sabor,))

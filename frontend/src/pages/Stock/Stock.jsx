@@ -98,9 +98,51 @@ export function StockPage() {
   const [pedidoItens, setPedidoItens] = useState([{ sabor: '', quantidade: '' }])
   const [submittingPedido, setSubmittingPedido] = useState(false)
 
+  const [movForm, setMovForm] = useState({ sabor: '', quantidade_kg: '', validade: '', acao: '', tipo: '' })
+  const [submittingMov, setSubmittingMov] = useState(false)
+
+  function handleMovChange(field, value) {
+    setMovForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function handleMovClear() {
+    setMovForm({ sabor: '', quantidade_kg: '', validade: '', acao: '', tipo: '' })
+  }
+
+  async function handleMovSalvar() {
+    if (submittingMov) return
+    const { sabor, quantidade_kg, acao } = movForm
+    if (!sabor) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o produto.' }); return }
+    if (!quantidade_kg) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe a quantidade.' }); return }
+    if (!acao) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione a ação.' }); return }
+    if (acao === 'Venda' && !movForm.tipo) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o tipo (PF ou CNPJ) para registrar uma venda.' }); return }
+
+    setSubmittingMov(true)
+    try {
+      await api.post('/api/estoque/movimentacoes', {
+        sabor,
+        quantidade_kg: Number(quantidade_kg),
+        validade: movForm.validade || null,
+        acao,
+        tipo: movForm.tipo || null,
+      })
+      notify({ type: 'success', title: 'Movimentação registrada', message: `${acao} de ${sabor} (${quantidade_kg} Kg) salva com sucesso.` })
+      handleMovClear()
+      await loadTable({ current: false })
+      await loadMetrics({ current: false })
+    } catch (err) {
+      const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao registrar movimentação.'
+      notify({ type: 'error', title: 'Erro ao salvar', message: msg })
+    } finally {
+      setSubmittingMov(false)
+    }
+  }
 
   function handlePedidoFormChange(field, value) {
-    setPedidoForm((prev) => ({ ...prev, [field]: value, ...ChevronDown(field === 'categoria' ? {produto: ''} : {}) }))
+    setPedidoForm((prev) => ({ ...prev, [field]: value }))
+    if (field === 'categoria') {
+      setPedidoItens([{ sabor: '', quantidade: '' }])
+    }
   }
 
   function handleAddItem() {
@@ -318,6 +360,69 @@ export function StockPage() {
         <MiniMetric title="Entradas hoje" value={mVal(metrics.entradas)} detail="Movimentação recebida no dia" />
         <MiniMetric title="Saídas hoje"   value={mVal(metrics.saidas)}   detail="Pedidos e baixas operacionais" />
       </div>
+
+      <SectionCard title="Gerenciar Estoque" subtitle="Registre entradas, vendas, retiradas e vencimentos de produtos.">
+        <div className="filtersGrid">
+          <div className="field">
+            <span>Produto</span>
+            <ProductDropdown
+              value={movForm.sabor}
+              onChange={(v) => handleMovChange('sabor', v)}
+              options={productOptions}
+              loading={productsLoading}
+            />
+          </div>
+
+          <label className="field">
+            <span>Quantidade (Kg)</span>
+            <input
+              type="number"
+              min="0"
+              placeholder="Ex: 10"
+              value={movForm.quantidade_kg}
+              onChange={(e) => handleMovChange('quantidade_kg', e.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span>Validade</span>
+            <input
+              type="date"
+              value={movForm.validade}
+              onChange={(e) => handleMovChange('validade', e.target.value)}
+            />
+          </label>
+
+          <SelectField
+            label="Ação"
+            value={movForm.acao}
+            onChange={(v) => handleMovChange('acao', v)}
+            options={['Adicionar', 'Venda', 'Retirar', 'Vencido']}
+            placeholder="Selecionar ação..."
+          />
+
+          {movForm.acao === 'Venda' && (
+            <SelectField
+              label="Tipo"
+              value={movForm.tipo}
+              onChange={(v) => handleMovChange('tipo', v)}
+              options={['Pessoa Física (PF)', 'Pessoa Jurídica (CNPJ)']}
+              placeholder="Selecionar tipo..."
+            />
+          )}
+        </div>
+
+        <div className="sectionActions">
+          <button className="btn" onClick={handleMovSalvar} disabled={submittingMov}>
+            <Plus size={15} />
+            {submittingMov ? 'Salvando...' : 'Salvar Movimentação'}
+          </button>
+          <button className="ghostBtn" onClick={handleMovClear}>
+            <X size={15} />
+            Limpar Campos
+          </button>
+        </div>
+      </SectionCard>
 
       <SectionCard title="Registrar Pedido" subtitle="Preencha os dados do cliente e adicione os produtos do pedido.">
         <div className="filtersGrid">
