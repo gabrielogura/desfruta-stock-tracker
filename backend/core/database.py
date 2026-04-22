@@ -113,6 +113,27 @@ def inicializar_banco():
         except Exception:
             conn.rollback()
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS pedidos (
+                id SERIAL PRIMARY KEY,
+                cliente VARCHAR,
+                tipo VARCHAR,
+                categoria VARCHAR,
+                usuario_id INT,
+                data TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'America/Sao_Paulo')
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS pedido_itens (
+                id SERIAL PRIMARY KEY,
+                pedido_id INT REFERENCES pedidos(id),
+                sabor VARCHAR,
+                quantidade NUMERIC,
+                preco NUMERIC
+            )
+        """)
+
         produtos_padrao = [
             ("Abacaxi", 28.0, 23.0, 0, 0), ("Abacaxi.Hortelã", 30.0, 25.0, 0, 0),
             ("Açaí", 33.0, 30.0, 0, 0), ("Acerola", 28.0, 23.0, 0, 0),
@@ -744,6 +765,71 @@ def obter_produtos_1kg():
         cursor.execute("SELECT sabor FROM produtos_1kg WHERE disponivel = 1 ORDER BY sabor")
         rows = cursor.fetchall()
         return [r[0] for r in rows]
+    
+def salvar_pedido(cliente, tipo, categoria, usuario_id, itens):
+    try:
+        tabela_produtos = 'produtos_1kg' if categoria == '1kg' else 'produtos_padrao'
+        coluna_preco = 'preco_cnpj' if tipo == 'Pessoa Jurídica (CNPJ)' else 'preco_pf'
+
+        with get_conn() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "INSERT INTO pedidos(cliente, tipo, categoria, usuario_id) VALUES (%s, %s, %s, %s) RETURNING id",
+                (cliente, tipo, categoria, usuario_id)
+            )
+            pedido_id = cursor.fetchone()[0]
+
+            for item in itens:
+                sabor = item.get('sabor')
+                quantidade = item.get('quantidade')
+
+                cursor.execute(
+                    f"SELECT {coluna_preco} FROM {tabela_produtos} WHERE sabor = %s",
+                    (sabor,)
+                )
+                row = cursor.fetchone()
+                preco = row[0] if row else None
+
+                cursor.execute(
+                    "INSERT INTO pedido_itens (pedido_id, sabor, quantidade, preco) VALUES (%s, %s, %s, %s)",
+                    (pedido_id, sabor, quantidade, preco)
+                )
+
+            conn.commit()
+            return pedido_id
+    except Exception as e:
+        print(f'erro ao salvar pedido: {e}')
+        raise
+
+def obter_pedido_por_id(pedido_id):
+    with get_conn() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT cliente, tipo, categoria, data FROM pedidos WHERE id = %s",
+            (pedido_id,)
+        )
+        pedido = cursor.fetchone()
+        if not pedido:
+            return None
+        
+        cursor.execute(
+            "SELECT sabor, quantidade, preco FROM pedido_itens WHERE pedido_id = %s",
+            (pedido_id,)
+        )
+        itens = cursor.fetchall()
+
+        return {
+            'cliente': pedido[0],
+            'tipo': pedido[1],
+            'categoria': pedido[2],
+            'data': pedido[3],
+            'itens': [
+                {'sabor': i[0], 'quantidade': i[1], 'preco': i[2]}
+                for i in itens
+            ]
+        }
 
 # --- Execução ---
 if __name__ == "__main__":

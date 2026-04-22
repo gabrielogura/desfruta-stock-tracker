@@ -10,7 +10,7 @@ tabela_produtos, cadastrar_produto, deletar_produto, registrar_log, deletar_logs
 cadastro_funcionario, deletar_funcionario, atualizar_produto, verificar_produto_existe, obter_nome_produtos, registrar_movimentacoes,
 obter_metricas_estoque, obter_volume_vendido_mes, obter_faturamento_mes, obter_ticket_medio_mes, obter_volume_vendido_mes_anterior,
 obter_faturamento_mes_anterior, obter_ticket_medio_mes_anterior, obter_faturamento_por_tipo_mes, obter_faturamento_anual, obter_top5_produtos_mes,
-inicializar_banco, tabela_produtos_1kg, registrar_movimentacoes_1kg, obter_produtos_1kg
+inicializar_banco, tabela_produtos_1kg, registrar_movimentacoes_1kg, obter_produtos_1kg, salvar_pedido, obter_pedido_por_id
 )
 
 # -------------------------
@@ -569,12 +569,24 @@ def registrar_pedido():
                 registrar_movimentacoes(sabor, quantidade, None, 'Venda', tipo)
 
         sabores = ', '.join([item.get('sabor', '') for item in itens])
-        registrar_log(nome_usuario, id_usuario, f'Venda  ·  {cliente}  ·  {sabores}')
+        pedido_id = salvar_pedido(cliente, tipo, categoria, id_usuario, itens)
+        registrar_log(nome_usuario, id_usuario, f'Venda · {cliente} · pedido_id:{pedido_id}')
 
         return jsonify({'status': 'sucesso', 'mensagem': 'Pedido registrado com sucesso!'}), 201
     
     except ValueError as ve:
         return jsonify({'status': 'erro', 'mensagem': str(ve)}), 400
+    except Exception as e:
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+    
+@app.route('/api/pedidos/<int:pedido_id>', methods=['GET'])
+@jwt_required()
+def obter_pedido(pedido_id):
+    try:
+        pedido = obter_pedido_por_id(pedido_id)
+        if not pedido:
+            return jsonify({'status': 'erro', 'mensagem': 'Pedido não encontrado.'}), 404
+        return jsonify({'status': 'sucesso', 'dados': pedido}), 200
     except Exception as e:
         return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
 # -------------------------
