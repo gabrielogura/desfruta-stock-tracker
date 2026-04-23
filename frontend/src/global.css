@@ -1463,10 +1463,19 @@ form {
   display: flex;
 }
 
+.mobileOnly {
+  display: none;
+}
+
 @media (max-width: 860px) {
+  .mobileOnly {
+    display: inline;
+  }
+  
   .desktopOnly {
     display: none;
   }
+
   .sidebar,
   .layout.isCollapsed .sidebar {
     position: fixed;
@@ -1594,6 +1603,40 @@ form {
 
   .recharts-responsive-container {
     min-height: 260px;
+  }
+
+  .stockPricePF,
+  .stockPriceCNPJ {
+    display: none;
+  }
+
+  .stockTable .row.rowStock {
+    min-width: unset;
+    grid-template-columns: 1fr 60px 90px;
+    font-size: 11px;
+  }
+
+  .stockTable .row.head {
+    grid-template-columns: 1fr 60px 90px;
+    font-size: 11px;
+  }
+
+  .pill {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .stockTable .pill {
+    font-size: 10px;
+    padding: 2px 5px;
+    white-space: nowrap;
+  }
+
+  .stockTable .row.rowStock,
+  .stockTable .row.head {
+    grid-template-columns: 1fr 60px 90px !important;
+    min-width: unset !important;
+    font-size: 11px;
   }
 }
 

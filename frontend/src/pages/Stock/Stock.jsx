@@ -98,7 +98,7 @@ export function StockPage() {
   const [pedidoItens, setPedidoItens] = useState([{ sabor: '', quantidade: '' }])
   const [submittingPedido, setSubmittingPedido] = useState(false)
 
-  const [movForm, setMovForm] = useState({ sabor: '', quantidade_kg: '', acao: '', tipo: '' })
+  const [movForm, setMovForm] = useState({ sabor: '', quantidade_kg: '', acao: '', categoria: 'kg' })
   const [submittingMov, setSubmittingMov] = useState(false)
 
   function handleMovChange(field, value) {
@@ -106,28 +106,35 @@ export function StockPage() {
   }
 
   function handleMovClear() {
-    setMovForm({ sabor: '', quantidade_kg: '', acao: '', tipo: '' })
+    setMovForm({ sabor: '', quantidade_kg: '', acao: '', categoria: 'kg' })
   }
 
   async function handleMovSalvar() {
     if (submittingMov) return
-    const { sabor, quantidade_kg, acao } = movForm
+    const { sabor, quantidade_kg, acao, categoria } = movForm
     if (!sabor) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o produto.' }); return }
     if (!quantidade_kg) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Informe a quantidade.' }); return }
     if (!acao) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione a ação.' }); return }
-    if (acao === 'Venda' && !movForm.tipo) { notify({ type: 'error', title: 'Campo obrigatório', message: 'Selecione o tipo (PF ou CNPJ) para registrar uma venda.' }); return }
 
     setSubmittingMov(true)
     try {
-      await api.post('/api/estoque/movimentacoes', {
-        sabor,
-        quantidade_kg: Number(quantidade_kg),
-        acao,
-        tipo: movForm.tipo || null,
-      })
+      if (categoria === '1kg') {
+        await api.post('/api/estoque/1kg/movimentacoes', {
+          sabor,
+          quantidade: Number(quantidade_kg),
+          acao,
+        })
+      } else {
+        await api.post('/api/estoque/movimentacoes', {
+          sabor,
+          quantidade: Number(quantidade_kg),
+          acao,
+        })
+      }
       notify({ type: 'success', title: 'Movimentação registrada', message: `${acao} de ${sabor} (${quantidade_kg} Kg) salva com sucesso.` })
       handleMovClear()
       await loadTable({ current: false })
+      await loadTable1kg({ current: false })
       await loadMetrics({ current: false })
     } catch (err) {
       const msg = extractApiMessage(err?.response?.data) || err?.message || 'Erro ao registrar movimentação.'
@@ -362,13 +369,22 @@ export function StockPage() {
 
       <SectionCard title="Gerenciar Estoque" subtitle="Registre entradas, vendas, retiradas e vencimentos de produtos.">
         <div className="filtersGrid">
+
+          <SelectField
+            label="Categoria"
+            value={movForm.categoria}
+            onChange={(v) => { handleMovChange('categoria', v); handleMovChange('sabor', '') }}
+            options={['kg', '1kg']}
+            placeholder="Selecionar categoria..."
+          />
+
           <div className="field">
             <span>Produto</span>
             <ProductDropdown
               value={movForm.sabor}
               onChange={(v) => handleMovChange('sabor', v)}
-              options={productOptions}
-              loading={productsLoading}
+              options={movForm.categoria === '1kg' ? products1kg : productOptions}
+              loading={movForm.categoria === '1kg' ? products1kgLoading : productsLoading}
             />
           </div>
 
@@ -491,9 +507,9 @@ export function StockPage() {
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
             <span>Produto</span>
-            <span>Preço PF</span>
-            <span>Preço CNPJ</span>
-            <span>Quantidade (Kg)</span>
+            <span className="stockPricePF">Preço PF</span>
+            <span className="stockPriceCNPJ">Preço CNPJ</span>
+            <span>Qtd.</span>
             <span>Status</span>
           </div>
 
@@ -523,8 +539,8 @@ export function StockPage() {
             return filtered.map((row) => (
               <div className="row rowStock" key={row.product}>
                 <span>{row.product}</span>
-                <span>{row.precoPF   ?? '--'}</span>
-                <span>{row.precoCNPJ ?? '--'}</span>
+                <span className="stockPricePF">{row.precoPF ?? '--'}</span>
+                <span className="stockPriceCNPJ">{row.precoCNPJ ?? '--'}</span>
                 <span>{row.quantity  ?? '--'}</span>
                 <span>
                   <span className={cx('pill', row.status === 'Disponível' ? 'ok' : row.status === 'Indisponível' ? 'bad' : row.status ? 'mid' : '')}>
@@ -542,9 +558,9 @@ export function StockPage() {
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
             <span>Produto</span>
-            <span>Preço PF</span>
-            <span>Preço CNPJ</span>
-            <span>Quantidade (Kg)</span>
+            <span className="stockPricePF">Preço PF</span>
+            <span className="stockPriceCNPJ">Preço CNPJ</span>
+            <span>Qtd.</span>
             <span>Status</span>
           </div>
 
@@ -572,8 +588,8 @@ export function StockPage() {
               : rows1kg.map((row) => (
                 <div className="row rowStock" key={row.sabor}>
                   <span>{row.sabor}</span>
-                  <span>{row.preco_pf ?? '--'}</span>
-                  <span>{row.preco_cnpj ?? '--'}</span>
+                  <span className="stockPricePF">{row.preco_pf != null ? `R$ ${Number(row.preco_pf).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '--'}</span>
+                  <span className="stockPriceCNPJ">{row.preco_cnpj != null ? `R$ ${Number(row.preco_cnpj).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '--'}</span>
                   <span>{row.quantidade != null ? `${row.quantidade} Kg` : '--'}</span>
                   <span>
                     <span className={cx('pill', row.disponivel === 1 ? 'ok' : 'bad')}>
