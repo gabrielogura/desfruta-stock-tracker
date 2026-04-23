@@ -121,13 +121,13 @@ export function StockPage() {
       if (categoria === '1kg') {
         await api.post('/api/estoque/1kg/movimentacoes', {
           sabor,
-          quantidade_kg: Number(quantidade_kg),
+          quantidade: Number(quantidade_kg),
           acao,
         })
       } else {
         await api.post('/api/estoque/movimentacoes', {
           sabor,
-          quantidade_kg: Number(quantidade_kg),
+          quantidade: Number(quantidade_kg),
           acao,
         })
       }
