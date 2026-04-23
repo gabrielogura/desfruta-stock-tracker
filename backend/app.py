@@ -421,7 +421,7 @@ def movimentacoes_estoque():
         id_usuario = info_user['user_id']
         dados = request.get_json()
         sabor = dados.get('sabor')
-        quantidade_kg = dados.get('quantidade_kg')
+        quantidade_kg = dados.get('quantidade')
         validade = dados.get('validade')
         acao = dados.get('acao')
 
