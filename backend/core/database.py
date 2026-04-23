@@ -762,7 +762,7 @@ def registrar_movimentacoes_1kg(sabor, quantidade, acao, tipo):
 def obter_produtos_1kg():
     with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT sabor FROM produtos_1kg WHERE disponivel = 1 ORDER BY sabor")
+        cursor.execute("SELECT sabor FROM produtos_1kg ORDER BY sabor")
         rows = cursor.fetchall()
         return [r[0] for r in rows]
     
