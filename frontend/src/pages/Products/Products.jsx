@@ -328,9 +328,9 @@ export function ProductsPage() {
             rows1kg.map((row) => (
               <div className="row rowProducts" key={row.sabor}>
                 <span>{row.sabor}</span>
-                <span>{row.preco_pf ?? '--'}</span>
-                <span>{row.preco_cnpj ?? '--'}</span>
-                <span>{row.quantidade != null ? `${row.quantidade} Un` : '--'}</span>
+                <span>{row.preco_pf != null ? `R$ ${Number(row.preco_pf).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '--'}</span>
+                <span>{row.preco_cnpj != null ? `R$ ${Number(row.preco_cnpj).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '--'}</span>
+                <span>{row.quantidade != null ? `${row.quantidade} Kg` : '--'}</span>
                 <span>
                   <span className={cx('pill', row.disponivel === 1 ? 'ok' : 'mid')}>
                     {row.disponivel === 1 ? 'Ativo' : 'Inativo'}

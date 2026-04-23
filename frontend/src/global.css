@@ -1318,7 +1318,7 @@ form {
 }
 
 .rowStock {
-  grid-template-columns: minmax(150px, 1.5fr) 110px 110px 120px 140px 110px;
+  grid-template-columns: minmax(150px, 1.5fr) 140px 140px 130px 130px;
 }
 
 .rowEmployees {
@@ -1578,10 +1578,6 @@ form {
     grid-template-columns: 140px 130px minmax(0, 1fr);
   }
 
-  .productsTable {
-    overflow-x: auto;
-  }
-
   .panelHeader {
     flex-direction: column;
     gap: 12px;
@@ -1605,37 +1601,59 @@ form {
     min-height: 260px;
   }
 
+  /* ── Tabelas responsivas ──────────────────────────────────── */
+
+  /* Remove min-width de todas as linhas de tabelas modernas */
+  .modernTable .row {
+    min-width: 0 !important;
+  }
+
+  /* Pills menores */
+  .pill {
+    font-size: 10px;
+    padding: 2px 6px;
+    white-space: nowrap;
+  }
+
   .stockPricePF,
   .stockPriceCNPJ {
     display: none;
   }
 
-  .stockTable .row.rowStock {
-    min-width: unset;
-    grid-template-columns: 1fr 60px 90px;
-    font-size: 11px;
-  }
-
-  .stockTable .row.head {
-    grid-template-columns: 1fr 60px 90px;
-    font-size: 11px;
-  }
-
-  .pill {
-    font-size: 10px;
-    padding: 2px 6px;
-  }
-
-  .stockTable .pill {
-    font-size: 10px;
-    padding: 2px 5px;
-    white-space: nowrap;
-  }
-
   .stockTable .row.rowStock,
   .stockTable .row.head {
     grid-template-columns: 1fr 60px 90px !important;
-    min-width: unset !important;
+    min-width: 0 !important;
+    font-size: 11px;
+  }
+
+  .productsTable .row.head span:nth-child(4),
+  .productsTable .row.rowProducts span:nth-child(4) {
+    display: none;
+  }
+
+  .productsTable .row.rowProducts,
+  .productsTable .row.head {
+    grid-template-columns: 3fr 50px 50px 50px !important;
+    min-width: 0 !important;
+    font-size: 10px;
+  }
+
+  .productsTable .pill {
+    font-size: 10px;
+    padding: 2px 4px;
+    white-space: nowrap;
+  }
+
+  .productsTable span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rowActivity {
+    grid-template-columns: 80px 80px minmax(0, 1fr) !important;
+    min-width: 0 !important;
     font-size: 11px;
   }
 }
