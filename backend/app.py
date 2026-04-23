@@ -473,7 +473,7 @@ def movimentacoes_estoque():
         acao = dados.get('acao')
 
         if not sabor or not quantidade_kg or not acao:
-            return jsonify({'satus': 'erro', 'mensagem': 'Nao foi possível obter todas as informações'}), 400
+            return jsonify({'satus': 'erro', 'mensagem': 'Não foi possível obter todas as informações'}), 400
         
         registrar_movimentacoes(sabor, quantidade_kg, validade, acao, None)
         registrar_log(nome_usuario, id_usuario, f'{acao}  ·  {sabor}  ·  {quantidade_kg} Kg')
