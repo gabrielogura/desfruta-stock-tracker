@@ -119,22 +119,20 @@ function DayGroup({ dateKey, logs }) {
         <div className="row rowActivity" key={idx}>
           <span>{formatTimestamp(item.timestamp)}</span>
           <span>{item.nome_usuario ?? '—'}</span>
-          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, overflow: 'hidden' }}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {formatAcao(item.acao)}
-              </span>
-              {item.acao?.startsWith('Venda') && (
-                <button
-                  className="ghostBtn"
-                  style={{ fontSize: 12, padding: '2px 8px', height: 26, whiteSpace: 'nowrap' }}
-                  onClick={() => abrirPedido(item.acao)}
-                  disabled={loadingModal}
-                >
-                  {loadingModal ? '...' : 'ver pedido'}
-                </button>
-              )}
+          <span className="acaoCell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, minWidth: 0, overflow: 'hidden' }}>
+            <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {formatAcao(item.acao)}
             </span>
+            {item.acao?.startsWith('Venda') && (
+              <button
+                className="ghostBtn"
+                style={{ padding: '2px 8px', whiteSpace: 'nowrap' }}
+                onClick={() => abrirPedido(item.acao)}
+                disabled={loadingModal}
+              >
+                {loadingModal ? '...' : 'ver pedido'}
+              </button>
+            )}
             <LogBadge acao={item.acao} />
           </span>
         </div>
@@ -227,7 +225,7 @@ export function RecentActivityTable() {
         <div className="row head rowActivity">
           <span>Data</span>
           <span>Usuário</span>
-          <span>Ação</span>
+          <span className="acaoCell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 30, gap: 4, minWidth: 0, overflow: 'hidden' }}>Ação</span>
         </div>
 
         {loading && (

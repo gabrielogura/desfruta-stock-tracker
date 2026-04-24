@@ -1310,7 +1310,7 @@ form {
 }
 
 .rowActivity {
-  grid-template-columns: 175px 160px 265px;
+  grid-template-columns: minmax(130px, 1fr) 130px minmax(200px, 2fr);
 }
 
 .rowProducts {
@@ -1467,6 +1467,10 @@ form {
   display: none;
 }
 
+.headAcao {
+  padding-right: 80px;
+}
+
 @media (max-width: 860px) {
   .mobileOnly {
     display: inline;
@@ -1575,7 +1579,11 @@ form {
   }
 
   .rowActivity {
-    grid-template-columns: 140px 130px minmax(0, 1fr);
+    grid-template-columns: 45px 55px minmax(0, 1fr) !important;
+    min-width: 0 !important;
+    font-size: 8px !important;
+    gap: 0px !important;
+    padding: 10px 8px !important;
   }
 
   .panelHeader {
@@ -1603,12 +1611,10 @@ form {
 
   /* ── Tabelas responsivas ──────────────────────────────────── */
 
-  /* Remove min-width de todas as linhas de tabelas modernas */
   .modernTable .row {
     min-width: 0 !important;
   }
 
-  /* Pills menores */
   .pill {
     font-size: 10px;
     padding: 2px 6px;
@@ -1651,10 +1657,43 @@ form {
     white-space: nowrap;
   }
 
-  .rowActivity {
-    grid-template-columns: 80px 80px minmax(0, 1fr) !important;
+  .activityTable {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .activityTable .pill {
+    font-size: 8px;
+    padding: 2px 4px;
+    white-space: nowrap;
+  }
+
+  .activityTable .ghostBtn {
+    font-size: 7px !important;
+    padding: 1px 5px !important;
+    height: 20px !important;
+  }
+
+  .activityTable .row {
+    padding: 10px 6px !important;
+  }
+
+  .acaoCell {
+    justify-content: space-between !important;
+    font-size: 8px !important;
+  }
+
+  .logDayGroup {
     min-width: 0 !important;
-    font-size: 11px;
+  }
+
+  .headAcao {
+    padding-right: 0 !important;
+  }
+
+  .headAcao {
+    padding-right: 0 !important;
+    justify-content: flex-start !important;
   }
 }
 
@@ -1714,10 +1753,6 @@ form {
     border-radius: 20px;
   }
 
-  .rowActivity {
-    min-width: 680px;
-  }
-  
   .logDayGroup {
     min-width: 678px;
   }
