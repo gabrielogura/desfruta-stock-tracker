@@ -1695,6 +1695,10 @@ form {
     padding-right: 0 !important;
     justify-content: flex-start !important;
   }
+
+  .activityTable .row.head .acaoCell {
+    justify-content: center !important;
+  }
 }
 
 @media (max-width: 480px) {
