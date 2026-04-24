@@ -314,9 +314,12 @@ export function StockPage() {
 
   const [tableFilter, setTableFilter] = useState('Visão Geral')
 
-  const filterOptions = ['Visão Geral', 'Disponível', 'Indisponível', 'Vencido']
+  const filterOptions = ['Visão Geral', 'Disponível', 'Indisponível']
   const [filterOpen, setFilterOpen] = useState(false)
   const filterRef = useRef(null)
+  const [tableFilter1kg, setTableFilter1kg] = useState('Visão Geral')
+  const [filterOpen1kg, setFilterOpen1kg] = useState(false)
+  const filterRef1kg = useRef(null)
 
   useEffect(() => {
     function handleClick(e) {
@@ -325,6 +328,14 @@ export function StockPage() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [filterOpen])
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (filterRef1kg.current && !filterRef1kg.current.contains(e.target)) setFilterOpen1kg(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [filterOpen1kg])
 
   const tableFilterSelect = (
     <div className="stockFilterWrapper" ref={filterRef}>
@@ -357,6 +368,42 @@ export function StockPage() {
       </div>
     </div>
   )
+
+  const tableFilterSelect1kg = (
+    <div className="stockFilterWrapper" ref={filterRef1kg}>
+      <span className="stockFilterLabel">Filtrar por</span>
+      <div className="prodDropdown" style={{ minWidth: 160 }}>
+        <button
+          type="button"
+          className={`prodDropdownTrigger${filterOpen1kg ? ' open' : ''}`}
+          style={{ height: 38, fontSize: 13, borderRadius: 10, padding: '0 12px' }}
+          onClick={() => setFilterOpen1kg((v) => !v)}
+        >
+          <span className="prodDropdownValue">{tableFilter1kg}</span>
+          <ChevronDown size={14} className={`prodDropdownChevron${filterOpen1kg ? ' rotated' : ''}`} />
+        </button>
+        {filterOpen1kg && (
+          <div className="prodDropdownMenu">
+            <ul className="prodDropdownList" style={{ padding: '6px' }}>
+              {filterOptions.map((opt) => (
+                <li
+                  key={opt}
+                  className={`prodDropdownItem${opt === tableFilter1kg ? ' selected' : ''}`}
+                  onClick={() => { setTableFilter1kg(opt); setFilterOpen1kg(false) }}
+                >
+                  {opt}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  const filtered1kg = tableFilter1kg === 'Visão Geral'
+    ? rows1kg
+    : rows1kg.filter((r) => (r.disponivel === 1 ? 'Disponível' : 'Indisponível') === tableFilter1kg)
 
   return (
     <div className="pageStack">
@@ -554,7 +601,7 @@ export function StockPage() {
       </SectionCard>
 
       {/* ── Tabela de Estoque (1kg) ── */}
-      <SectionCard title="Tabela de Estoque (1kg)" subtitle="Produtos em embalagem de 1kg, quantidades em unidades.">
+      <SectionCard title="Tabela de Estoque (1kg)" subtitle="Produtos em embalagem de 1kg, quantidades em unidades." headerAction={tableFilterSelect1kg}>
         <div className="table modernTable stockTable">
           <div className="row head rowStock">
             <span>Produto</span>
@@ -585,7 +632,7 @@ export function StockPage() {
                   <span style={{ gridColumn: '1 / -1', opacity: 0.5, padding: '4px 0' }}>Nenhum produto disponível.</span>
                 </div>
               )
-              : rows1kg.map((row) => (
+              : filtered1kg.map((row) => (
                 <div className="row rowStock" key={row.sabor}>
                   <span>{row.sabor}</span>
                   <span className="stockPricePF">{row.preco_pf != null ? `R$ ${Number(row.preco_pf).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '--'}</span>
