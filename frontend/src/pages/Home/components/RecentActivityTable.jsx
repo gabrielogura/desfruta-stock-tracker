@@ -152,22 +152,24 @@ function DayGroup({ dateKey, logs }) {
               <button className="ghostBtn" style={{ padding: '2px 8px' }} onClick={() => setPedidoModal(null)}>✕</button>
             </div>
             <p style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>
-              {pedidoModal.tipo} · {pedidoModal.data ? new Date(pedidoModal.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—'}
+              {pedidoModal.tipo}
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 80px', gap: '6px 16px', fontSize: 13 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 80px 90px', gap: '6px 16px', fontSize: 13 }}>
               <span style={{ opacity: 0.5, fontWeight: 600 }}>Sabor</span>
               <span style={{ opacity: 0.5, fontWeight: 600 }}>Qtd</span>
               <span style={{ opacity: 0.5, fontWeight: 600 }}>Preço</span>
+              <span style={{ opacity: 0.5, fontWeight: 600 }}>Subtotal</span>
               {pedidoModal.itens.map((item, i) => (
                 <Fragment key={i}>
                   <span>{item.sabor}</span>
                   <span>{item.quantidade} {pedidoModal.categoria === '1kg' ? 'un' : 'kg'}</span>
-                  <span>{item.preco != null ? `R$ ${Number(item.preco).toFixed(2)}` : '—'}</span>
+                  <span>{item.preco != null ? `R$ ${Number(item.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
+                  <span>{item.preco != null ? `R$ ${(Number(item.preco) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
                 </Fragment>
               ))}
             </div>
             <div style={{ borderTop: '1px solid var(--border)', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'flex-end', fontSize: 14, fontWeight: 700 }}>
-              Total: R$ {pedidoModal.itens.reduce((acc, i) => acc + (i.preco ?? 0) * i.quantidade, 0).toFixed(2)}
+              Total: R$ {pedidoModal.itens.reduce((acc, i) => acc + (i.preco ?? 0) * i.quantidade, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
           </div>
         </div>
