@@ -791,6 +791,13 @@ def salvar_pedido(cliente, tipo, categoria, usuario_id, itens):
                 row = cursor.fetchone()
                 preco = row[0] if row else None
 
+                if sabor == 'Morango' and quantidade >= 5:
+                    preco = 20.0
+                elif sabor == 'Morango' and quantidade >= 3:
+                    preco = 22.0
+                elif sabor == 'Morango (1kg)' and quantidade >= 3:
+                    preco = 22.0
+
                 cursor.execute(
                     "INSERT INTO pedido_itens (pedido_id, sabor, quantidade, preco) VALUES (%s, %s, %s, %s)",
                     (pedido_id, sabor, quantidade, preco)
@@ -826,7 +833,15 @@ def obter_pedido_por_id(pedido_id):
             'categoria': pedido[2],
             'data': pedido[3],
             'itens': [
-                {'sabor': i[0], 'quantidade': i[1], 'preco': i[2]}
+                {
+                    'sabor': i[0],
+                    'quantidade': i[1],
+                    'preco': i[2],
+                    'em_promocao': (
+                        (i[0] == 'Morango' and i[1] >= 3) or
+                        (i[0] == 'Morango (1kg)' and i[1] >= 3)
+                    )
+                }
                 for i in itens
             ]
         }

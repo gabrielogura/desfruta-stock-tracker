@@ -163,8 +163,12 @@ function DayGroup({ dateKey, logs }) {
                 <Fragment key={i}>
                   <span>{item.sabor}</span>
                   <span>{item.quantidade} {pedidoModal.categoria === '1kg' ? 'un' : 'kg'}</span>
-                  <span>{item.preco != null ? `R$ ${Number(item.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
-                  <span>{item.preco != null ? `R$ ${(Number(item.preco) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
+                  <span style={item.em_promocao ? { color: '#22c55e', fontWeight: 600 } : {}}>
+                    <span>{item.preco != null ? `R$ ${Number(item.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
+                  </span>
+                  <span style={item.em_promocao ? { color: '#22c55e', fontWeight: 600 } : {}}>
+                    <span>{item.preco != null ? `R$ ${(Number(item.preco) * item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}</span>
+                  </span>
                 </Fragment>
               ))}
             </div>
